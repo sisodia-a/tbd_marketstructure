@@ -4,18 +4,18 @@ code to replicate car paper
 
 <p align="center"><img src="./conjoint_analysis_and_ideal_point_design/data_conjointanalysis/disentanglement_example.png" alt="disentanglement_example" style="display: block; margin-left: auto; margin-right: auto; width: 100%; text-align: center;" > </p>
 
-## Generative Interpretable Visual Design: Using Disentanglement for Visual Conjoint Analysis
-Code to replicate results in, "Generative Interpretable Visual Design: Using Disentanglement for Visual Conjoint Analysis."  
+## Market Structure Mapping with Visual Characteristics
+Code to replicate results in, "Market Structure Mapping with Visual Characteristics."  
 
 If you find this work useful, please use the following citation information in plaintext or BibTeX format:
 
-Sisodia, A, Burnap, A, and Kumar, V (2024). Generative Interpretable Visual Design: Using Disentanglement for Visual Conjoint Analysis. Journal of Marketing Research (under review).
+Sisodia, A, Kumar, V and Burnap, A (2024). Market Structure Mapping with Visual Characteristics. Marketing Science (under review).
 
 ```
-@article{sisodia2024disentangelment,
-  title= Generative Interpretable Visual Design: Using Disentanglement for Visual Conjoint Analysis},
-  author={Sisodia, A, Burnap, A, and Kumar, V},
-  journal={Journal of Marketing Research (under review)},
+@article{sisodia2024marketstructure,
+  title= Market Structure Mapping with Visual Characteristics},
+  author={Sisodia, A, Kumar, V and Burnap, A},
+  journal={Marketing Science (under review)},
   volume={XXX},
   number={XXX},
   pages={XXX},
