@@ -38,6 +38,10 @@ To download the dataset, please use the following links. Copy these files to `./
 
 ## Replication Steps
 
+#### Step 1: Run BLP Demand Model
+
+Go to `./blp_before_disentanglement` and run BLP demand model by executing the `pyblp_code.py script`.
+
 #### Step 1: Grid Search for Hyperparamaters
 
 Go to `./hyperparameter_selection` and run disentanglement model with a unique $\beta$, $\delta$, and supervisory signal combination with 10 different seeds. Vary $\beta$, $\delta$, and supervisory signal combination.
