@@ -23,13 +23,13 @@ Sisodia, A, Kumar, V and Burnap, A (2024). Market Structure Mapping with Visual 
   publisher={XXX}
 }
 ```
-This code will reproduce Figures (5, 6, 10, 12, G.1, G.2) and Tables (2, 6, 7, D.1, E.1, F.1) of the paper.
+This code will reproduce Figures and Tables of the paper.
 
 ## Installation
 #### Libraries
 This codebase was built using the Pytorch neural net framework.  However, it also depends on over 100 other Python packages, as well as GPU libraries including CUDA runtimes and cuDNN kernel support. We can not guarantee this code will run and replicate unless the same environment and library versions are used.  To install these packages (including the same library versions), please use the following:
 
-    conda env create -f disentanglement_env.yml
+    conda env create -f marketstructure_env.yml
 
 #### Data
 To download the dataset, please use the following links. Copy these files to `./hyperparameter_selection/data/watches/` and `./post_model_search/data/watches/` directories.
