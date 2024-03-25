@@ -2,7 +2,8 @@
 code to replicate car paper
 
 
-<p align="center"><img src="./conjoint_analysis_and_ideal_point_design/data_conjointanalysis/disentanglement_example.png" alt="disentanglement_example" style="display: block; margin-left: auto; margin-right: auto; width: 100%; text-align: center;" > </p>
+<p align="center"><img src="./one_disentanglement_hyper_selection/results/xife_s5b50m40
+/xife_s5b50m40_reconstruct_traverse.png" alt="disentanglement_example" style="display: block; margin-left: auto; margin-right: auto; width: 100%; text-align: center;" > </p>
 
 ## Market Structure Mapping with Visual Characteristics
 Code to replicate results in, "Market Structure Mapping with Visual Characteristics."  
