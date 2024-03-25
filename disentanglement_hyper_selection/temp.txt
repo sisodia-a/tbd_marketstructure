@@ -1,2 +1,0 @@
-python main.py -s 6 --name s6b1m20 --btcvae-B 1 --btcvae-M 20
-python main.py -s 6 --name s6b34m50 --btcvae-B 34 --btcvae-M 50
