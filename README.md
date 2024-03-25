@@ -52,49 +52,42 @@ To download the dataset, please use the following links. Copy these files to `./
 
 #### Step 3: Grid Search for Hyperparamaters
 
-Go to `./hyperparameter_selection` and run disentanglement model with a unique $\beta$, $\delta$, and supervisory signal combination with 10 different seeds. Vary $\beta$, $\delta$, and supervisory signal combination.
-
-For example, in the below command, the seed is set to 1, $\beta$=18, $\delta$=50, and the supervisory signal is brand. The model name is `brand_s1`. 
+1. Go to `./one_disentanglement_hyper_selection` and run disentanglement model with a unique $\lambda_1$, $\lambda_2$, and supervisory signal with 10 different seeds. Vary $\lambda_1$, $\lambda_2$, and supervisory signal combination. For example, in the below command, the seed is set to 1, $\lambda_1$=50, $\lambda_2$=20, and the supervisory signal is price. The model name is `price_s5b50m20`. 
 
 ```
-python main.py --sup_signal brand -s 1 --name brand_s1 --btcvae-B 18 --btcvae-M 50
+python main.py --sup_signal1 price -s 5 --name price_s5b50m20 --btcvae-B 50 --btcvae-M 20
 ```
 
-In the above command, seed, $\beta$, and $\delta$ is a scalar value. This codebase, specific to the watch dataset, supports the following set of discrete supporting signals. Using any other name will result in an error.
+In the above command, seed, $\lambda_1$, and $\lambda_2$ is a scalar value. This codebase, specific to one supervisory signal, supports the following set of discrete supporting signals. Using any other name will result in an error.
 
 ```
-discreteprice
-brand
-circa
-material
-movement
-discreteprice_brand
-discreteprice_circa
-discreteprice_material
-discreteprice_movement
-brand_circa
-brand_material
-brand_movement
-circa_material
-circa_movement
-material_movement
-discreteprice_brand_circa
-discreteprice_brand_material
-discreteprice_brand_movement
-discreteprice_circa_material
-discreteprice_circa_movement
-discreteprice_material_movement
-brand_circa_material
-brand_circa_movement
-brand_material_movement
-circa_material_movement
-discreteprice_brand_circa_material
-discreteprice_brand_circa_movement
-discreteprice_brand_material_movement
-discreteprice_circa_material_movement
-brand_circa_material_movement
-discreteprice_brand_circa_material_movement
+price
+xife
 ```
+
+2. Go to `./three_disentanglement_hyper_selection/` and run disentanglement model with a unique $\lambda_1$, $\lambda_2$, and supervisory signal with 10 different seeds. Vary $\lambda_1$, $\lambda_2$, and supervisory signal combination. For example, in the below command, the seed is set to 1, $\lambda_1$=50, $\lambda_2$=20, and the supervisory signal is a comboination of hpwt, mpg and . The model name is `hpwt_mpg_space_s5b50m20`. 
+
+```
+python main.py -s 5 --name hpwt_mpg_space_s5b50m20 --btcvae-B 50 --btcvae-M 20
+```
+
+In the above command, seed, $\lambda_1$, and $\lambda_2$ is a scalar value. This codebase, specific to three supervisory signals, supports the following set of discrete supporting signals. Using any other name will result in an error.
+
+```
+hpwt
+mpg
+space
+```
+
+2. Go to `./unsup_disentanglement_hyper_selection/` and run disentanglement model with a unique $\lambda_1$ with 10 different seeds. Vary $\lambda_1$ alone. For example, in the below command, the seed is set to 1, $\lambda_1$=50, $\lambda_2$=0, and the supervisory signal is a comboination of hpwt, mpg and . The model name is `hpwt_mpg_space_s5b50m20`. 
+
+```
+python main.py -s 5 --name unsup_s5b50m0 --btcvae-B 50 --btcvae-M 0
+```
+
+In the above command, seed, $\lambda_1$ is a scalar value and $\lambda_2$ is fixed at 0. This codebase is specific to no supervisory signals.
+
+
 
 The above command will create a directory `results/<model-name>/` which will contain:
 
