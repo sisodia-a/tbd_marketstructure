@@ -32,7 +32,7 @@ This codebase was built using the Pytorch neural net framework.  However, it als
     conda env create -f marketstructure_env.yml
 
 #### Data
-To download the dataset, please use the following links. Copy these files to `./hyperparameter_selection/data/watches/` and `./post_model_search/data/watches/` directories.
+To download the dataset, please use the following links. Copy these files to `./one_disentanglement_hyper_selection/data/cars/`, `./three_disentanglement_hyper_selection/data/cars/`, and `./unsup_disentanglement_hyper_selection/data/cars/`.
 
 * #### [Watches Dataset](https://www.dropbox.com/scl/fo/akj3w8pat0lg1fa4ax480/h?rlkey=5d4ykq5br3kzkwarhi4ld4na8&dl=0)
 
@@ -65,18 +65,10 @@ price
 xife
 ```
 
-2. Go to `./three_disentanglement_hyper_selection/` and run disentanglement model with a unique $\lambda_1$, $\lambda_2$, and supervisory signal with 10 different seeds. Vary $\lambda_1$, $\lambda_2$, and supervisory signal combination. For example, in the below command, the seed is set to 1, $\lambda_1$=50, $\lambda_2$=20, and the supervisory signal is a comboination of hpwt, mpg and . The model name is `hpwt_mpg_space_s5b50m20`. 
+2. Go to `./three_disentanglement_hyper_selection/` and run disentanglement model with a unique $\lambda_1$, and $\lambda_2$ with 10 different seeds. Vary $\lambda_1$, and $\lambda_2$. For example, in the below command, the seed is set to 1, $\lambda_1$=50, $\lambda_2$=20, and the supervisory signal is a comboination of hpwt, mpg and space. The model name is `hpwt_mpg_space_s5b50m20`.
 
 ```
 python main.py -s 5 --name hpwt_mpg_space_s5b50m20 --btcvae-B 50 --btcvae-M 20
-```
-
-In the above command, seed, $\lambda_1$, and $\lambda_2$ is a scalar value. This codebase, specific to three supervisory signals, supports the following set of discrete supporting signals. Using any other name will result in an error.
-
-```
-hpwt
-mpg
-space
 ```
 
 2. Go to `./unsup_disentanglement_hyper_selection/` and run disentanglement model with a unique $\lambda_1$ with 10 different seeds. Vary $\lambda_1$ alone. For example, in the below command, the seed is set to 1, $\lambda_1$=50, $\lambda_2$=0, and the supervisory signal is a comboination of hpwt, mpg and . The model name is `hpwt_mpg_space_s5b50m20`. 
@@ -87,9 +79,7 @@ python main.py -s 5 --name unsup_s5b50m0 --btcvae-B 50 --btcvae-M 0
 
 In the above command, seed, $\lambda_1$ is a scalar value and $\lambda_2$ is fixed at 0. This codebase is specific to no supervisory signals.
 
-
-
-The above command will create a directory `results/<model-name>/` which will contain:
+All the python commands will create a directory `results/<model-name>/` which will contain:
 
 * **model.pt**: The model at the end of training.
 * **specs.json**: The parameters used to run the program (default and modified with CLI).
@@ -98,13 +88,33 @@ The above command will create a directory `results/<model-name>/` which will con
 * **filename_test1.csv**: filenames of all watches in the test1 dataset. 
 * **filename_test2.csv**: filenames of all watches in the test2 dataset. 
 * **filename_train.csv**: filenames of all watches in the train dataset. 
-* **mean_params_test1.csv**: mean visual characteristics of all watches in the test1 dataset. 
-* **mean_params_test2.csv**: mean visual characteristics of all watches in the test2 dataset. 
-* **mean_params_train.csv**: mean visual characteristics of all watches in the train dataset. 
+* **mean_params_test1.csv**: mean visual characteristics of all cars in the test1 dataset. 
+* **mean_params_test2.csv**: mean visual characteristics of all cars in the test2 dataset. 
+* **mean_params_train.csv**: mean visual characteristics of all cars in the train dataset. 
 
-Select the value of $\beta$ and $\delta$ for each supervisory signal at which the average supervised loss across 10 seeds on the test1 dataset is lowest. The supervised loss on the test1 set is stored as `sup_loss_test` in the first json object in the filename ending in `test_losses.log` in the directory `results/<model-name>/` for each combination of seed, $\beta$, $\delta$, and the supervisory signal. 
+#### Step 4: Model Selection & UDR Calculation
 
-#### Step 4: Comparison of Different Supervisory Signals
+Select the value of $\lambda_1$ and $\lambda_2$ for each supervisory signal at which the average supervised loss across 10 seeds on the test1 dataset is lowest. 
+
+1. Go to `./one_disentanglement_hyper_selection/results` and execute `./mv_script.sh`.
+2. Go to `./three_disentanglement_hyper_selection/results` and execute `./mv_script.sh`.
+3. Go to `./unsup_disentanglement_hyper_selection/results` and execute `./mv_script.sh`.
+4. Go to `./one_model_selection` and execute `cp ../one_disentanglement_hyper_selection/results/*/*csv`.
+5. Go to `./three_model_selection` and execute `cp ../three_disentanglement_hyper_selection/results/*/*csv`.
+6. Go to `./unsup_model_selection` and execute `cp ../unsup_disentanglement_hyper_selection/results/*/*csv`.
+7. Go to `./one_model_selection` and execute `Rscript val_loss.R price` and `Rscript val_loss.R xife`.
+8. Go to `./three_model_selection` and execute `Rscript val_loss.R hpwt_mpg_space`
+9. Go to `./one_model_selection` and execute `Rscript r_script_all.R price` and `Rscript r_script_all.R xife`.
+10. Go to `./three_model_selection` and execute `Rscript r_script_all.R hpwt_mpg_space`.
+11. Go to `./unsup_model_selection` and execute `Rscript r_script_all.R unsup`, `Rscript r_script_all.R vae`, and ``Rscript r_script_all.R ae`.
+12. Calculate UDR corresponding to make-model fixed effects by executing `Rscript udr_calculation.R xife` from the `one_model_selection` directory. [ **Table X in the paper** ]
+13. Calculate UDR corresponding to price by executing `Rscript udr_calculation.R price` from the `one_model_selection` directory. [ **Table X in the paper** ]
+14. Calculate UDR corresponding to hpwt, mpg and space by executing `Rscript udr_calculation.R hpwt_mpg_space` from the `three_model_selection` directory. [ **Table X in the paper** ]
+15. Calculate UDR corresponding to the unsupervised $\beta$-TCVAE by executing `Rscript udr_calculation.R unsup` from the `unsup_model_selection` directory. [ **Table X in the paper** ]
+16. Calculate UDR corresponding to plain-vanilla VAE by executing `Rscript udr_calculation.R vae` from the `unsup_model_selection` directory. [ **Table X in the paper** ]
+17. Calculate UDR corresponding to plain-vanilla AE by executing `Rscript udr_calculation.R ae` from the `unsup_model_selection` directory. [ **Table X in the paper** ]
+
+The supervised loss on the test1 set is stored as `sup_loss_test` in the first json object in the filename ending in `test_losses.log` in the directory `results/<model-name>/` for each combination of seed, $\beta$, $\delta$, and the supervisory signal. 
 
 Go to `./post_model_search` and run disentanglement model at the optimal $\beta$ and $\delta$ for each supervisory signal combination at 10 different seeds. 
 
