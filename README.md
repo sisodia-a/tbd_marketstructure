@@ -40,9 +40,16 @@ To download the dataset, please use the following links. Copy these files to `./
 
 #### Step 1: Run BLP Demand Model
 
-Change directory to `./blp_before_disentanglement` and run BLP demand model by executing `python pyblp_code.py`.
+Change directory to `./blp_before_disentanglement` and estimate the BLP demand model by executing `python pyblp_code.py`.
+Execute `Rscript helper_script.R` to produce `exp_python_image_table.csv`.
+Move  `exp_python_image_table.csv` to `../dataset_creation`.
 
-#### Step 1: Grid Search for Hyperparamaters
+#### Step 2: Dataset Creation
+
+Change directory to `./dataset_creation`.
+Execute `python npz_file_creation.py`.
+
+#### Step 3: Grid Search for Hyperparamaters
 
 Go to `./hyperparameter_selection` and run disentanglement model with a unique $\beta$, $\delta$, and supervisory signal combination with 10 different seeds. Vary $\beta$, $\delta$, and supervisory signal combination.
 
@@ -103,7 +110,7 @@ The above command will create a directory `results/<model-name>/` which will con
 
 Select the value of $\beta$ and $\delta$ for each supervisory signal at which the average supervised loss across 10 seeds on the test1 dataset is lowest. The supervised loss on the test1 set is stored as `sup_loss_test` in the first json object in the filename ending in `test_losses.log` in the directory `results/<model-name>/` for each combination of seed, $\beta$, $\delta$, and the supervisory signal. 
 
-#### Step 2: Comparison of Different Supervisory Signals
+#### Step 4: Comparison of Different Supervisory Signals
 
 Go to `./post_model_search` and run disentanglement model at the optimal $\beta$ and $\delta$ for each supervisory signal combination at 10 different seeds. 
 
@@ -148,7 +155,7 @@ python main_viz.py --name vae_s10
 ```
 The above command will create **vae_s10_posterior_traversals.png**: (Figure G2b) in `results/vae_s10/`.
 
-#### Step 3: UDR Calculation
+#### Step 5: UDR Calculation
 
 Copy the files stored in `results/<model_name>/` directory with the filename ending in `mean_params_test2.csv` to the `calculate_udr` folder. 
 
@@ -159,115 +166,6 @@ Rscript udr_calculation.R --sup_signal='brand'
 ```
 
 The results will be appended to `filenamed udr.log`. It will replicate results in Table F.1 of the paper.
-
-#### Step 4: Helper Script
-
-Go to `./r_script`. Switch to an R environment and execute the `Rscript replication_script.Rmd` to produce Table 2, D.1, E.1 and Figure 6 of the paper.
-
-#### Step 5: Conjoint Analysis and "Ideal Point'' Generative Design 
-
-See the directory `/conjoint_analysis_and_ideal_point_design` for an example ipython notebook for running the hiearachical Bayeisan estimation and produce Table 6-7 and Figure 10-12 in the paper.
-
-Note that generating the ideal point design requires inputting the "ideal point" embedding values into the generative model from the disentanglement portion of this codebase. This is applicable for Figure 11. Modify the torch tensor in the `save_cbc_images` function in the `./post_model_search/utils/visualize.py` file to save the ideal point watch image.
-
-## List of Files
-
-```
-./README.md: README file
-./disentanglement_env.yml: Environment File
-
-
-
-./calculate_udr/udr.log: Sample Output of udr_calculation.R
-./calculate_udr/udr_calculation.R: Script to Calculate UDR
-./calculate_udr/*mean_params_test2.csv: mean visual characteristics of all watches in the test2 dataset. 
-
-
-
-./conjoint_analysis_and_ideal_point_design/conjoint_analysis_benchmark_models/data_generated.py: Data Generation for Conjoint
-./conjoint_analysis_and_ideal_point_design/conjoint_analysis_benchmark_models/models.py: Prediction Models
-./conjoint_analysis_and_ideal_point_design/conjoint_analysis_benchmark_models/requirements_benchmark_models.yml: Environment File
-./conjoint_analysis_and_ideal_point_design/conjoint_analysis_benchmark_models/train_generated_watch_prediction.py: Watch Prediction Training Functions
-./conjoint_analysis_and_ideal_point_design/data_conjointanalysis/CBCwatchexercise_simple_responses_generated.csv: Conjoint Survey Response CSV File
-./conjoint_analysis_and_ideal_point_design/data_conjointanalysis/conj_gen_file_mapping_AnkitThresholds.csv: CSV file to map to actual visual characteristic quantified levels
-./conjoint_analysis_and_ideal_point_design/data_conjointanalysis/FullConjointData_generated_mapped_variables.csv: Conjoint Survey Raw File 
-./conjoint_analysis_and_ideal_point_design/data_conjointanalysis/disentanglement_example.png: Disentanglement Example
-./conjoint_analysis_and_ideal_point_design/Example_Python_Notebook_with_Results_and_Plots.ipynb: Conjoint Interactive Python Notebook
-./conjoint_analysis_and_ideal_point_design/data.py: Data Generation for Conjoint 
-./conjoint_analysis_and_ideal_point_design/HB_conjoint_requirements.yml: Environment File
-./conjoint_analysis_and_ideal_point_design/run_HB_conjoint.py: Hierarchical Bayesian Conjoint Prediction File
-
-
-
-./hyperparameter_selection/__pycache__/*: bytecode cache files automatically generated by python
-
-./hyperparameter_selection/data/watches/christies.npz: Training Data
-./hyperparameter_selection/data/watches/christies_test1.npz: Test1 Data
-./hyperparameter_selection/data/watches/christies_test2.npz: Test2 Data
-
-./hyperparameter_selection/dataset/__pycache__/*: bytecode cache files automatically generated by python
-./hyperparameter_selection/dataset/datasets.py: for processing data
-
-./hyperparameter_selection/models/__pycache__/*: bytecode cache files automatically generated by python
-./hyperparameter_selection/models/initialization.py: initializing the neural network
-./hyperparameter_selection/models/losses.py: computing the neural network losses
-./hyperparameter_selection/models/math.py: helper file with useful math functions
-./hyperparameter_selection/models/modelIO.py: helper file for reading/writing model
-./hyperparameter_selection/models/regression.py: supervised layer
-./hyperparameter_selection/models/vae.py: code for setting up the VAE
-
-./hyperparameter_selection/training/__pycache__/*: bytecode cache files automatically generated by python
-./hyperparameter_selection/training/evaluate.py: code to evaluate the trained model
-./hyperparameter_selection/training/training.py: code to train the model
-
-./hyperparameter_selection/utils/__pycache__/*: bytecode cache files automatically generated by python
-./hyperparameter_selection/utils/__init__.py
-./hyperparameter_selection/utils/helpers.py: helper functions
-./hyperparameter_selection/utils/visualize.py: code to visualize the learned visual characteristics
-./hyperparameter_selection/utils/viz_helpers.py: helper functions for visualization
-
-./hyperparameter_selection/hyperparam.ini: configuration file for hyperparameters
-./hyperparameter_selection/example_commands.txt: file with example commands
-
-./hyperparameter_selection/main.py: main python execution file 
-
-
-
-./post_model_search/__pycache__/*: bytecode cache files automatically generated by python
-
-./post_model_search/data/watches/christies.npz: Training Data
-./post_model_search/data/watches/christies_test1.npz: Test1 Data
-./post_model_search/data/watches/christies_test2.npz: Test2 Data
-
-./post_model_search/dataset/__pycache__/*: bytecode cache files automatically generated by python
-./post_model_search/dataset/datasets.py: for processing data
-
-./post_model_search/models/__pycache__/*: bytecode cache files automatically generated by python
-./post_model_search/models/initialization.py: initializing the neural network
-./post_model_search/models/losses.py: computing the neural network losses
-./post_model_search/models/math.py: helper file with useful math functions
-./post_model_search/models/modelIO.py: helper file for reading/writing model
-./post_model_search/models/regression.py: supervised layer
-./post_model_search/models/vae.py: code for setting up the VAE
-
-./post_model_search/results/<model_name>/*: files generated on executing the model with name <model_name>
-
-./post_model_search/training/__pycache__/*: bytecode cache files automatically generated by python
-./post_model_search/training/evaluate.py: code to evaluate the trained model
-./post_model_search/training/training.py: code to train the model
-
-./post_model_search/utils/__pycache__/*: bytecode cache files automatically generated by python
-./post_model_search/utils/__init__.py
-./post_model_search/utils/helpers.py: helper functions
-./post_model_search/utils/visualize.py: code to visualize the learned visual characteristics
-./post_model_search/utils/viz_helpers.py: helper functions for visualization
-
-./post_model_search/hyperparam.ini: configuration file for hyperparameters
-./post_model_search/execute_step2.txt: file with example commands
-
-./post_model_search/main.py: main python execution file
-./post_model_search/main_viz.py: main python execution file to generate images for conjoint analysis
-```
 
 ## Computing Resources
 
