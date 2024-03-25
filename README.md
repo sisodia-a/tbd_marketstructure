@@ -135,7 +135,7 @@ This will produce `./unsup_disentanglement_hyper_selection/results/unsup_s5b50m0
 
 ## Computing Resources
 
-We used 64G GPU to run each model instance of 100 epoch, 64 batch size, 5e-4 learning rate. Each model run takes 8 minutes. We train 10 random seeds * 32 supervisory signal combinations * 25*15 grid values = 120,000 models. This would mean 16000 hours of model training.
+We used 64G GPU to run each model instance of 200 epoch, 64 batch size, 5e-4 learning rate. Each model run takes 4 minutes. We train 10 random seeds * 3 supervisory signal combinations * 25*15 grid values = 11,250 models. This would mean 750 hours of model training.
 
 ## Citation
 
