@@ -102,8 +102,8 @@ Select the value of $\lambda_1$ and $\lambda_2$ for each supervisory signal at w
 4. Go to `./one_model_selection` and execute `cp ../one_disentanglement_hyper_selection/results/*/*csv`.
 5. Go to `./three_model_selection` and execute `cp ../three_disentanglement_hyper_selection/results/*/*csv`.
 6. Go to `./unsup_model_selection` and execute `cp ../unsup_disentanglement_hyper_selection/results/*/*csv`.
-7. Go to `./one_model_selection` and execute `Rscript val_loss.R price` and `Rscript val_loss.R xife`.
-8. Go to `./three_model_selection` and execute `Rscript val_loss.R hpwt_mpg_space`
+7. Go to `./one_model_selection` and execute `Rscript val_loss.R price` and `Rscript val_loss.R xife` to find the optimal hyperparameters for a particular supervisory signal.
+8. Go to `./three_model_selection` and execute `Rscript val_loss.R hpwt_mpg_space` to find the optimal hyperparameters for a particular supervisory signal.
 9. Go to `./one_model_selection` and execute `Rscript r_script_all.R price` and `Rscript r_script_all.R xife`.
 10. Go to `./three_model_selection` and execute `Rscript r_script_all.R hpwt_mpg_space`.
 11. Go to `./unsup_model_selection` and execute `Rscript r_script_all.R unsup`, `Rscript r_script_all.R vae`, and ``Rscript r_script_all.R ae`.
@@ -114,62 +114,24 @@ Select the value of $\lambda_1$ and $\lambda_2$ for each supervisory signal at w
 16. Calculate UDR corresponding to plain-vanilla VAE by executing `Rscript udr_calculation.R vae` from the `unsup_model_selection` directory. [ **Table X in the paper** ]
 17. Calculate UDR corresponding to plain-vanilla AE by executing `Rscript udr_calculation.R ae` from the `unsup_model_selection` directory. [ **Table X in the paper** ]
 
-The supervised loss on the test1 set is stored as `sup_loss_test` in the first json object in the filename ending in `test_losses.log` in the directory `results/<model-name>/` for each combination of seed, $\beta$, $\delta$, and the supervisory signal. 
+#### Step 4: Poaterior Traversal Generation
 
-Go to `./post_model_search` and run disentanglement model at the optimal $\beta$ and $\delta$ for each supervisory signal combination at 10 different seeds. 
-
-For the watch dataset, execute the commands listed in `execute_step2.txt` to use the values listed in the paper. For example, execute the following command:
-
+1. Execute the following commands from `one_disentanglement_hyper_selection`. 
 ```
-python main.py --sup_signal brand_circa_movement -s 10 --name brand_circa_movement_s10 --btcvae-B 50 --btcvae-M 1
+python main_viz.py --name xife_s5b50m40 -s 5
 ```
 
-The above command will create a directory `results/brand_circa_movement_s10/` which will contain:
+This will produce `./one_disentanglement_hyper_selection/results/xife_s5b50m40/xife_s5b50m40_reconstruct_traverse.png'. [ **Figure Y in the paper** ]
 
-* **model.pt**: The model at the end of training.
-* **specs.json**: The parameters used to run the program (default and modified with CLI).
-* **train_losses.csv**: All (sub-)losses computed during training on the train and validation dataset.
-* **test_losses.log**: All (sub-)losses computed at the end of training on the test1 and test2 dataset. 
-* **brand_circa_movement_s10_filename_test1.csv**: filenames of all watches in the test1 dataset. 
-* **brand_circa_movement_s10_filename_test2.csv**: filenames of all watches in the test2 dataset. 
-* **brand_circa_movement_s10_filename_train.csv.csv**: filenames of all watches in the train dataset. 
-* **brand_circa_movement_s10_mean_params_test1.csv**: mean visual characteristics of all watches in the test1 dataset. 
-* **brand_circa_movement_s10_mean_params_test2.csv**: mean visual characteristics of all watches in the test2 dataset. 
-* **brand_circa_movement_s10_mean_params_train.csv**: mean visual characteristics of all watches in the train dataset. 
-
+2. Execute the following commands from `unsup_disentanglement_hyper_selection`.
+   
 ```
-python main_viz.py --name brand_circa_movement_s10
+python main_viz.py --name unsup_s5b50m0 -s 5
+python main_viz.py --name vae_s5 -s 5
+python main_viz.py --name ae_s5 -s 5
 ```
 
-The above command will create **brand_circa_movement_s10_posterior_traversals.png** (Figure 5 and Figure G1a) in `results/brand_circa_movement_s10/`.
-```
-python main_viz.py --name circa_s10
-```
-The above command will create **circa_s10_posterior_traversals.png** (Figure G1b) in `results/circa_s10/`.
-```
-python main_viz.py --name unsupervised_s10
-```
-The above command will create **unsupervised_s10_posterior_traversals.png** (Figure G1c) in `results/unsupervised_s10/`.
-```
-python main_viz.py --name ae_s10
-```
-The above command will create **ae_s10_posterior_traversals.png** (Figure G2a) in `results/ae_s10/`.
-```
-python main_viz.py --name vae_s10
-```
-The above command will create **vae_s10_posterior_traversals.png**: (Figure G2b) in `results/vae_s10/`.
-
-#### Step 5: UDR Calculation
-
-Copy the files stored in `results/<model_name>/` directory with the filename ending in `mean_params_test2.csv` to the `calculate_udr` folder. 
-
-Go to `./calculate_udr` to compare the UDRs for different supervisory signals. Switch to an R environment and execute the Rscript `udr_calculation.R` with the supervisory signal as the argument. For example:
-
-```
-Rscript udr_calculation.R --sup_signal='brand'
-```
-
-The results will be appended to `filenamed udr.log`. It will replicate results in Table F.1 of the paper.
+This will produce `./unsup_disentanglement_hyper_selection/results/unsup_s5b50m0/unsup_s5b50m0_reconstruct_traverse.png' [ **Figure Y in the paper** ]; `./unsup_disentanglement_hyper_selection/results/vae_s5/vae_s5_reconstruct_traverse.png' [ **Figure Y in the paper** ]; `./unsup_disentanglement_hyper_selection/results/ae_s5/ae_s5_reconstruct_traverse.png' [ **Figure Y in the paper** ]
 
 ## Computing Resources
 
