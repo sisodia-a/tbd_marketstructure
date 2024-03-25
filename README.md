@@ -46,8 +46,8 @@ To download the dataset, please use the following links. Copy these files to `./
 
 #### Step 2: Dataset Creation
 
-Change directory to `./dataset_creation`.
-Execute `python npz_file_creation.py`.
+1. Change directory to `./dataset_creation`.
+2. Execute `python npz_file_creation.py`.
 
 #### Step 3: Grid Search for Hyperparamaters
 
