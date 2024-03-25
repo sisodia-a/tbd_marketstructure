@@ -131,7 +131,7 @@ python main_viz.py --name vae_s5 -s 5
 python main_viz.py --name ae_s5 -s 5
 ```
 
-This will produce `./unsup_disentanglement_hyper_selection/results/unsup_s5b50m0/unsup_s5b50m0_reconstruct_traverse.png' [ **Figure Y in the paper** ]; `./unsup_disentanglement_hyper_selection/results/vae_s5/vae_s5_reconstruct_traverse.png' [ **Figure Y in the paper** ]; `./unsup_disentanglement_hyper_selection/results/ae_s5/ae_s5_reconstruct_traverse.png' [ **Figure Y in the paper** ]
+This will produce `./unsup_disentanglement_hyper_selection/results/unsup_s5b50m0/unsup_s5b50m0_reconstruct_traverse.png` [ **Figure Y in the paper** ]; `./unsup_disentanglement_hyper_selection/results/vae_s5/vae_s5_reconstruct_traverse.png` [ **Figure Y in the paper** ]; `./unsup_disentanglement_hyper_selection/results/ae_s5/ae_s5_reconstruct_traverse.png` [ **Figure Y in the paper** ]
 
 ## Computing Resources
 
