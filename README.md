@@ -40,9 +40,9 @@ To download the dataset, please use the following links. Copy these files to `./
 
 #### Step 1: Run BLP Demand Model
 
-Change directory to `./blp_before_disentanglement` and estimate the BLP demand model by executing `python pyblp_code.py`.
-Execute `Rscript helper_script.R` to produce `exp_python_image_table.csv`.
-Move  `exp_python_image_table.csv` to `../dataset_creation`.
+1. Change directory to `./blp_before_disentanglement` and estimate the BLP demand model by executing `python pyblp_code.py`.
+2. Execute `Rscript helper_script.R` to produce `exp_python_image_table.csv`.
+3. Move  `exp_python_image_table.csv` to `../dataset_creation`.
 
 #### Step 2: Dataset Creation
 
