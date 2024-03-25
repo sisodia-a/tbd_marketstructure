@@ -1,8 +1,5 @@
-# Market Structure Paper
-code to replicate the market structure paper
-
 <p align="center"><img src="./one_disentanglement_hyper_selection/results/xife_s5b50m40
-/xife_s5b50m40_reconstruct_traverse.png" alt="disentanglement_example" style="display: block; margin-left: auto; margin-right: auto; width: 100%; text-align: center;" > </p>
+/xife_s5b50m40_reconstruct_traverse.png" alt="visual_characteristics" style="display: block; margin-left: auto; margin-right: auto; width: 100%; text-align: center;" > </p>
 
 ## Market Structure Mapping with Visual Characteristics
 Code to replicate results in, "Market Structure Mapping with Visual Characteristics."  
