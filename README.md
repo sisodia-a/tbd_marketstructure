@@ -48,32 +48,32 @@ To download the dataset, please use the following links. Copy these files to `./
 
 #### Step 3: Grid Search for Hyperparamaters
 
-1. Go to `./one_disentanglement_hyper_selection` and run disentanglement model with a unique $\lambda_1$, $\lambda_2$, and supervisory signal with 10 different seeds. Vary $\lambda_1$, $\lambda_2$, and supervisory signal combination. For example, in the below command, the seed is set to 1, $\lambda_1$=50, $\lambda_2$=20, and the supervisory signal is price. The model name is `price_s5b50m20`. 
+1. Go to `./one_disentanglement_hyper_selection` and run disentanglement model with a unique `$\lambda_1$`, `$\lambda_2$`, and supervisory signal with 10 different seeds. Vary `$\lambda_1$`, `$\lambda_2$`, and supervisory signal combination. For example, in the below command, the seed is set to 1, `$\lambda_1$=50`, `$\lambda_2$=20`, and the supervisory signal is price. The model name is `price_s5b50m20`. 
 
 ```
 python main.py --sup_signal1 price -s 5 --name price_s5b50m20 --btcvae-B 50 --btcvae-M 20
 ```
 
-In the above command, seed, $\lambda_1$, and $\lambda_2$ is a scalar value. This codebase, specific to one supervisory signal, supports the following set of discrete supporting signals. Using any other name will result in an error.
+In the above command, seed, `$\lambda_1$`, and `$\lambda_2$` is a scalar value. This codebase, specific to one supervisory signal, supports the following set of discrete supporting signals. Using any other name will result in an error.
 
 ```
 price
 xife
 ```
 
-2. Go to `./three_disentanglement_hyper_selection/` and run disentanglement model with a unique $\lambda_1$, and $\lambda_2$ with 10 different seeds. Vary $\lambda_1$, and $\lambda_2$. For example, in the below command, the seed is set to 1, $\lambda_1$=50, $\lambda_2$=20, and the supervisory signal is a comboination of hpwt, mpg and space. The model name is `hpwt_mpg_space_s5b50m20`.
+2. Go to `./three_disentanglement_hyper_selection/` and run disentanglement model with a unique `$\lambda_1$`, and `$\lambda_2$` with 10 different seeds. Vary `$\lambda_1$`, and `$\lambda_2$`. For example, in the below command, the seed is set to 1, `$\lambda_1$=50`, `$\lambda_2$=20`, and the supervisory signal is a comboination of hpwt, mpg and space. The model name is `hpwt_mpg_space_s5b50m20`.
 
 ```
 python main.py -s 5 --name hpwt_mpg_space_s5b50m20 --btcvae-B 50 --btcvae-M 20
 ```
 
-2. Go to `./unsup_disentanglement_hyper_selection/` and run disentanglement model with a unique $\lambda_1$ with 10 different seeds. Vary $\lambda_1$ alone. For example, in the below command, the seed is set to 1, $\lambda_1$=50, $\lambda_2$=0, and the supervisory signal is a comboination of hpwt, mpg and . The model name is `hpwt_mpg_space_s5b50m20`. 
+2. Go to `./unsup_disentanglement_hyper_selection/` and run disentanglement model with a unique `$\lambda_1$` with 10 different seeds. Vary `$\lambda_1$` alone. For example, in the below command, the seed is set to 1, `$\lambda_1$=50`, `$\lambda_2$=0`, and the supervisory signal is a comboination of hpwt, mpg and . The model name is `hpwt_mpg_space_s5b50m20`. 
 
 ```
 python main.py -s 5 --name unsup_s5b50m0 --btcvae-B 50 --btcvae-M 0
 ```
 
-In the above command, seed, $\lambda_1$ is a scalar value and $\lambda_2$ is fixed at 0. This codebase is specific to no supervisory signals.
+In the above command, seed, `$\lambda_1$` is a scalar value and `$\lambda_2$` is fixed at 0. This codebase is specific to no supervisory signals.
 
 All the python commands will create a directory `results/<model-name>/` which will contain:
 
@@ -90,7 +90,7 @@ All the python commands will create a directory `results/<model-name>/` which wi
 
 #### Step 4: Model Selection & UDR Calculation
 
-Select the value of $\lambda_1$ and $\lambda_2$ for each supervisory signal at which the average supervised loss across 10 seeds on the test1 dataset is lowest. 
+Select the value of `$\lambda_1$` and `$\lambda_2$` for each supervisory signal at which the average supervised loss across 10 seeds on the test1 dataset is lowest. 
 
 1. Go to `./one_disentanglement_hyper_selection/results` and execute `./mv_script.sh`.
 2. Go to `./three_disentanglement_hyper_selection/results` and execute `./mv_script.sh`.
@@ -102,7 +102,7 @@ Select the value of $\lambda_1$ and $\lambda_2$ for each supervisory signal at w
 8. Go to `./three_model_selection` and execute `Rscript val_loss.R hpwt_mpg_space` to find the optimal hyperparameters for a particular supervisory signal.
 9. Go to `./one_model_selection` and execute `Rscript r_script_all.R price` and `Rscript r_script_all.R xife`.
 10. Go to `./three_model_selection` and execute `Rscript r_script_all.R hpwt_mpg_space`.
-11. Go to `./unsup_model_selection` and execute `Rscript r_script_all.R unsup`, `Rscript r_script_all.R vae`, and ``Rscript r_script_all.R ae`.
+11. Go to `./unsup_model_selection` and execute `Rscript r_script_all.R unsup`, `Rscript r_script_all.R vae`, and `Rscript r_script_all.R ae`.
 12. Calculate UDR corresponding to make-model fixed effects by executing `Rscript udr_calculation.R xife` from the `one_model_selection` directory. [ **Table X in the paper** ]
 13. Calculate UDR corresponding to price by executing `Rscript udr_calculation.R price` from the `one_model_selection` directory. [ **Table X in the paper** ]
 14. Calculate UDR corresponding to hpwt, mpg and space by executing `Rscript udr_calculation.R hpwt_mpg_space` from the `three_model_selection` directory. [ **Table X in the paper** ]
@@ -117,7 +117,7 @@ Select the value of $\lambda_1$ and $\lambda_2$ for each supervisory signal at w
 python main_viz.py --name xife_s5b50m40 -s 5
 ```
 
-This will produce `./one_disentanglement_hyper_selection/results/xife_s5b50m40/xife_s5b50m40_reconstruct_traverse.png'. [ **Figure Y in the paper** ]
+This will produce `./one_disentanglement_hyper_selection/results/xife_s5b50m40/xife_s5b50m40_reconstruct_traverse.png`. [ **Figure Y in the paper** ]
 
 2. Execute the following commands from `unsup_disentanglement_hyper_selection`.
    
