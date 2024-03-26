@@ -11,7 +11,7 @@ Sisodia, A, Kumar, V and Burnap, A (2024). Market Structure Mapping with Visual 
 @article{sisodia2024marketstructure,
   title= Market Structure Mapping with Visual Characteristics},
   author={Sisodia, A, Kumar, V and Burnap, A},
-  journal={Marketing Science (under review)},
+  journal={To be submitted},
   volume={XXX},
   number={XXX},
   pages={XXX},
@@ -156,8 +156,8 @@ Feel free to use this code for your research. If you find this code useful, plea
 Sisodia, A, Burnap, A, and Kumar, V (2024). Generative Interpretable Visual Design: Using Disentanglement for Visual Conjoint Analysis. Journal of Marketing Research (under review).
 
 ```
-@article{sisodia2024disentangelment,
-  title=  **Figure 5: (Color Online) Segment B, D \& J: Market Structure Map**},
+@article{sisodia2024marketstructure,
+  title=  {Market Structure Mapping with Visual Characteristics},
   author={Sisodia, A, Kumar, V, and Burnap, A},
   journal={To be submitted},
   volume={XXX},
