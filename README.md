@@ -5,7 +5,7 @@ Code to replicate results in, "Market Structure Mapping with Visual Characterist
 
 If you find this work useful, please use the following citation information in plaintext or BibTeX format:
 
-Sisodia, A, Kumar, V and Burnap, A (2024). Market Structure Mapping with Visual Characteristics. Marketing Science (under review).
+Sisodia, A, Kumar, V and Burnap, A (2024). Market Structure Mapping with Visual Characteristics. To be submitted.
 
 ```
 @article{sisodia2024marketstructure,
