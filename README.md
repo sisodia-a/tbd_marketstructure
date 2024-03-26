@@ -131,8 +131,15 @@ This will produce `./unsup_disentanglement_hyper_selection/results/unsup_s5b50m0
 
 #### Step 5: Market Structure Maps
 
-Execute  `Rscript visualization_file.Rmd` to produce **Table 6: Descriptive Statistics of Structured Data**, **Table 8: Correlation Matrix**, **Table 9: Product Characteristics**, **Figure 5: (Color Online) Segment B, D \& J: Market Structure Map**, **Table 10: Correlation Between Distances in Structured Space \& Distances in Visual Space**, **Table 11: Closest Within-Segment Rivals in Structured Space \& Visual Space**,  **Table 12: Area Share of a Make in Structured Space \& Visual Space**
-results on **Does differentiation across segments increase when visual information is included?**, ``, and ``. 
+Execute  `Rscript visualization_file.Rmd` to produce 
+
+1. **Table 6: Descriptive Statistics of Structured Data**
+2. **Table 8: Correlation Matrix**, **Table 9: Product Characteristics**
+3. **Figure 5: (Color Online) Segment B, D \& J: Market Structure Map**
+4. **Table 10: Correlation Between Distances in Structured Space \& Distances in Visual Space**
+5. **Table 11: Closest Within-Segment Rivals in Structured Space \& Visual Space**
+6. **Table 12: Area Share of a Make in Structured Space \& Visual Space**
+7. Results on **Does differentiation across segments increase when visual information is included?**
 
 ## Computing Resources
 
