@@ -48,7 +48,7 @@ To download the dataset, please use the following links. Copy these files to `./
 
 #### Step 3: Grid Search for Hyperparamaters
 
-1. Go to `./one_disentanglement_hyper_selection` and run disentanglement model with a unique $\lambda_1$, $\lambda_2$, and supervisory signal with 10 different seeds. Vary $\lambda_1$, $\lambda_2$, and supervisory signal combination. For example, in the below command, the seed is set to 1, `$\lambda_1$=50`, `$\lambda_2$=20`, and the supervisory signal is price. The model name is `price_s5b50m20`. 
+1. Go to `./one_disentanglement_hyper_selection` and run disentanglement model with a unique $\lambda_1$, $\lambda_2$, and supervisory signal with 10 different seeds. Vary $\lambda_1$, $\lambda_2$, and supervisory signal combination. For example, in the below command, the seed is set to 1, $\lambda_1$=50, $\lambda_2$=20, and the supervisory signal is price. The model name is `price_s5b50m20`. 
 
 ```
 python main.py --sup_signal1 price -s 5 --name price_s5b50m20 --btcvae-B 50 --btcvae-M 20
@@ -61,7 +61,7 @@ price
 xife
 ```
 
-2. Go to `./three_disentanglement_hyper_selection/` and run disentanglement model with a unique $\lambda_1$, and $\lambda_2$ with 10 different seeds. Vary $\lambda_1$, and $\lambda_2$. For example, in the below command, the seed is set to 1, `$\lambda_1$=50`, `$\lambda_2$=20`, and the supervisory signal is a comboination of hpwt, mpg and space. The model name is `hpwt_mpg_space_s5b50m20`.
+2. Go to `./three_disentanglement_hyper_selection/` and run disentanglement model with a unique $\lambda_1$, and $\lambda_2$ with 10 different seeds. Vary $\lambda_1$, and $\lambda_2$. For example, in the below command, the seed is set to 1, $\lambda_1$=50, $\lambda_2$=20, and the supervisory signal is a comboination of hpwt, mpg and space. The model name is `hpwt_mpg_space_s5b50m20`.
 
 ```
 python main.py -s 5 --name hpwt_mpg_space_s5b50m20 --btcvae-B 50 --btcvae-M 20
