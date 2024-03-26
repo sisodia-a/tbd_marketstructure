@@ -129,6 +129,11 @@ python main_viz.py --name ae_s5 -s 5
 
 This will produce `./unsup_disentanglement_hyper_selection/results/unsup_s5b50m0/unsup_s5b50m0_reconstruct_traverse.png` [ **Figure Y in the paper** ]; `./unsup_disentanglement_hyper_selection/results/vae_s5/vae_s5_reconstruct_traverse.png` [ **Figure Y in the paper** ]; `./unsup_disentanglement_hyper_selection/results/ae_s5/ae_s5_reconstruct_traverse.png` [ **Figure Y in the paper** ]
 
+#### Step 5: Market Structure Maps
+
+Execute  `Rscript visualization_file.Rmd` to produce **Table 6: Descriptive Statistics of Structured Data**, **Table 8: Correlation Matrix**, **Table 9: Product Characteristics**, **Figure 5: (Color Online) Segment B, D \& J: Market Structure Map**, **Table 10: Correlation Between Distances in Structured Space \& Distances in Visual Space**, **Table 11: Closest Within-Segment Rivals in Structured Space \& Visual Space**,  **Table 12: Area Share of a Make in Structured Space \& Visual Space**
+results on **Does differentiation across segments increase when visual information is included?**, ``, and ``. 
+
 ## Computing Resources
 
 We used 64G GPU to run each model instance of 200 epoch, 64 batch size, 5e-4 learning rate. Each model run takes 4 minutes. We train 10 random seeds * 3 supervisory signal combinations * 25*15 grid values = 11,250 models. This would mean 750 hours of model training.
