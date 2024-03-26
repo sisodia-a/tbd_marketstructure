@@ -103,12 +103,12 @@ Select the value of `$\lambda_1$` and `$\lambda_2$` for each supervisory signal 
 9. Go to `./one_model_selection` and execute `Rscript r_script_all.R price` and `Rscript r_script_all.R xife`.
 10. Go to `./three_model_selection` and execute `Rscript r_script_all.R hpwt_mpg_space`.
 11. Go to `./unsup_model_selection` and execute `Rscript r_script_all.R unsup`, `Rscript r_script_all.R vae`, and `Rscript r_script_all.R ae`.
-12. Calculate UDR corresponding to make-model fixed effects by executing `Rscript udr_calculation.R xife` from the `one_model_selection` directory. [ **Table X in the paper** ]
-13. Calculate UDR corresponding to price by executing `Rscript udr_calculation.R price` from the `one_model_selection` directory. [ **Table X in the paper** ]
-14. Calculate UDR corresponding to hpwt, mpg and space by executing `Rscript udr_calculation.R hpwt_mpg_space` from the `three_model_selection` directory. [ **Table X in the paper** ]
-15. Calculate UDR corresponding to the unsupervised $\beta$-TCVAE by executing `Rscript udr_calculation.R unsup` from the `unsup_model_selection` directory. [ **Table X in the paper** ]
-16. Calculate UDR corresponding to plain-vanilla VAE by executing `Rscript udr_calculation.R vae` from the `unsup_model_selection` directory. [ **Table X in the paper** ]
-17. Calculate UDR corresponding to plain-vanilla AE by executing `Rscript udr_calculation.R ae` from the `unsup_model_selection` directory. [ **Table X in the paper** ]
+12. Calculate UDR corresponding to make-model fixed effects by executing `Rscript udr_calculation.R xife` from the `one_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
+13. Calculate UDR corresponding to price by executing `Rscript udr_calculation.R price` from the `one_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
+14. Calculate UDR corresponding to hpwt, mpg and space by executing `Rscript udr_calculation.R hpwt_mpg_space` from the `three_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
+15. Calculate UDR corresponding to the unsupervised $\beta$-TCVAE by executing `Rscript udr_calculation.R unsup` from the `unsup_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
+16. Calculate UDR corresponding to plain-vanilla VAE by executing `Rscript udr_calculation.R vae` from the `unsup_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
+17. Calculate UDR corresponding to plain-vanilla AE by executing `Rscript udr_calculation.R ae` from the `unsup_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
 
 #### Step 4: Poaterior Traversal Generation
 
