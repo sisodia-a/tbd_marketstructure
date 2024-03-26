@@ -135,11 +135,12 @@ Execute  `Rscript visualization_file.Rmd` to produce
 
 1. **Table 6: Descriptive Statistics of Structured Data**
 2. **Table 8: Correlation Matrix**, **Table 9: Product Characteristics**
-3. **Figure 5: (Color Online) Segment B, D \& J: Market Structure Map**
+3. **Table 9: Product Characteristics**
 4. **Table 10: Correlation Between Distances in Structured Space \& Distances in Visual Space**
 5. **Table 11: Closest Within-Segment Rivals in Structured Space \& Visual Space**
 6. **Table 12: Area Share of a Make in Structured Space \& Visual Space**
-7. Results on **Does differentiation across segments increase when visual information is included?**
+7. **Figure 5: (Color Online) Segment B, D \& J: Market Structure Map**
+8. Results on **Does differentiation across segments increase when visual information is included?**
 
 ## Computing Resources
 
