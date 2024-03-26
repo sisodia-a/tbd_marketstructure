@@ -110,27 +110,27 @@ Select the value of $\lambda_1$ and $\lambda_2$ for each supervisory signal at w
 16. Calculate UDR corresponding to plain-vanilla VAE by executing `Rscript udr_calculation.R vae` from the `unsup_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
 17. Calculate UDR corresponding to plain-vanilla AE by executing `Rscript udr_calculation.R ae` from the `unsup_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
 
-#### Step 4: Poaterior Traversal Generation
+#### Step 4: Posterior Traversal Generation
 
 1. Execute the following commands from `one_disentanglement_hyper_selection`. 
 ```
 python main_viz.py --name xife_s5b50m40 -s 5
 ```
 
-This will produce `./one_disentanglement_hyper_selection/results/xife_s5b50m40/xife_s5b50m40_reconstruct_traverse.png`. [ **Figure Y in the paper** ]
+This will produce `./one_disentanglement_hyper_selection/results/xife_s5b50m40/xife_s5b50m40_reconstruct_traverse.png`. [ **Figure 4 in the paper** ]
 
 2. Execute the following commands from `unsup_disentanglement_hyper_selection`.
    
 ```
-python main_viz.py --name unsup_s5b50m0 -s 5
-python main_viz.py --name vae_s5 -s 5
 python main_viz.py --name ae_s5 -s 5
+python main_viz.py --name vae_s5 -s 5
+python main_viz.py --name unsup_s5b50m0 -s 5
 ```
 
 This will produce:
-1. `./unsup_disentanglement_hyper_selection/results/unsup_s5b50m0/unsup_s5b50m0_reconstruct_traverse.png` [ **Figure Y in the paper** ]
-2. `./unsup_disentanglement_hyper_selection/results/vae_s5/vae_s5_reconstruct_traverse.png` [ **Figure Y in the paper** ]
-3. `./unsup_disentanglement_hyper_selection/results/ae_s5/ae_s5_reconstruct_traverse.png` [ **Figure Y in the paper** ]
+1. `./unsup_disentanglement_hyper_selection/results/ae_s5/ae_s5_reconstruct_traverse.png` [ **Figure EC.1 in the paper** ]
+2. `./unsup_disentanglement_hyper_selection/results/vae_s5/vae_s5_reconstruct_traverse.png` [ **Figure EC.2 in the paper** ]
+3. `./unsup_disentanglement_hyper_selection/results/unsup_s5b50m0/unsup_s5b50m0_reconstruct_traverse.png` [ **Figure EC.3 in the paper** ]
 
 #### Step 5: Market Structure Maps
 
