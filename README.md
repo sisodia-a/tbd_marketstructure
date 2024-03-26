@@ -157,9 +157,9 @@ Sisodia, A, Burnap, A, and Kumar, V (2024). Generative Interpretable Visual Desi
 
 ```
 @article{sisodia2024disentangelment,
-  title= Generative Interpretable Visual Design: Using Disentanglement for Visual Conjoint Analysis},
-  author={Sisodia, A, Burnap, A, and Kumar, V},
-  journal={Journal of Marketing Research (under review)},
+  title=  **Figure 5: (Color Online) Segment B, D \& J: Market Structure Map**},
+  author={Sisodia, A, Kumar, V, and Burnap, A},
+  journal={To be submitted},
   volume={XXX},
   number={XXX},
   pages={XXX},
