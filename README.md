@@ -28,7 +28,7 @@ This codebase was built using the Pytorch neural net framework.  However, it als
     conda env create -f marketstructure_env.yml
 
 #### Data
-To download the dataset, please use the following links. 
+To download the dataset, please use the following link.
 
 * #### [Cars Dataset](https://www.dropbox.com/scl/fi/jp96sri86wux7rca4koys/cars_original.npz?rlkey=citqff0cgh4lh4q1zrt9cegre&dl=0)
 
