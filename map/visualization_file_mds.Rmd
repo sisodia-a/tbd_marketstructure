@@ -232,7 +232,7 @@ plot_B <- function(df, segment_text, char1, char2, market) {
   
   # Return the plots
   # list(p)
-  ggsave(paste0("./plot_files/model_plotB_",segment_text,"_",market,"_",char1,"_",char2,".pdf"), plot=p, dpi = 300, height = 6, width = 6, units = "in")
+  ggsave(paste0("./mds_plot_files/model_plotB_",segment_text,"_",market,"_",char1,"_",char2,".pdf"), plot=p, dpi = 300, height = 6, width = 6, units = "in")
 }
 
 ```
@@ -358,8 +358,8 @@ plot_C <- function(str_mds_data_df, viz_mds_data_df, mix_mds_data_df, segment_te
   p <- ggplot(df, aes_string(x=char1, y=char2)) + geom_point(aes(shape=make), alpha=0.5, size=3) + theme_minimal() + guides(size=FALSE) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), legend.text = element_text(size=14), axis.title.x = element_text(size=14), axis.title.y = element_text(size=14), axis.text.x = element_text(size=12), axis.text.y = element_text(size=12)) + scale_x_continuous(limits = c(1.2*min(str_mds_data_df[[char1]]), 1.2*max(str_mds_data_df[[char1]]))) + scale_y_continuous(limits = c(1.2*min(str_mds_data_df[[char2]]), 1.2*max(str_mds_data_df[[char2]]))) + scale_shape_manual(values=1:(nlevels(factor(df$make))),guide = guide_legend(title = NULL)) + theme(legend.position = "bottom", legend.box = "vertical") + xlab("X-AXIS (MDS on Xs)") + ylab("Y-AXIS (MDS on Xs)") + theme(plot.title = element_text(hjust = 0.5)) + geom_text_repel(aes(label=model), hjust=0, vjust=0, size=4) + ggtitle(paste(segment_text,"Segment"))
   # Return the plots
   # list(p)
-  ggsave(paste0("./plot_files/model_plotC_",segment_text,"_",market,"_",char1,"_",char2,".pdf"), plot=p, dpi = 300, height = 9, width = 9, units = "in")
-  # pdf(paste0("./plot_files/model_plotC_", segment_text, "_", market, "_", char1, "_", char2, ".pdf"), width = 9, height = 9)
+  ggsave(paste0("./mds_plot_files/model_plotC_",segment_text,"_",market,"_",char1,"_",char2,".pdf"), plot=p, dpi = 300, height = 9, width = 9, units = "in")
+  # pdf(paste0("./mds_plot_files/model_plotC_", segment_text, "_", market, "_", char1, "_", char2, ".pdf"), width = 9, height = 9)
   # print(p)
   # dev.off()
 
@@ -374,8 +374,8 @@ plot_C <- function(str_mds_data_df, viz_mds_data_df, mix_mds_data_df, segment_te
   
   # Return the plots
   # list(p)
-  ggsave(paste0("./plot_files/model_plotC_",segment_text,"_",market,"_",char1,"_",char2,".pdf"), plot=p, dpi = 300, height = 9, width = 9, units = "in")
-  # pdf(paste0("./plot_files/model_plotC_", segment_text, "_", market, "_", char1, "_", char2, ".pdf"), width = 9, height = 9)
+  ggsave(paste0("./mds_plot_files/model_plotC_",segment_text,"_",market,"_",char1,"_",char2,".pdf"), plot=p, dpi = 300, height = 9, width = 9, units = "in")
+  # pdf(paste0("./mds_plot_files/model_plotC_", segment_text, "_", market, "_", char1, "_", char2, ".pdf"), width = 9, height = 9)
   # print(p)
   # dev.off()
 
@@ -390,8 +390,8 @@ plot_C <- function(str_mds_data_df, viz_mds_data_df, mix_mds_data_df, segment_te
   
   # Return the plots
   # list(p)
-  ggsave(paste0("./plot_files/model_plotC_",segment_text,"_",market,"_",char1,"_",char2,".pdf"), plot=p, dpi = 300, height = 9, width = 9, units = "in")
-  # pdf(paste0("./plot_files/model_plotC_", segment_text, "_", market, "_", char1, "_", char2, ".pdf"), width = 9, height = 9)
+  ggsave(paste0("./mds_plot_files/model_plotC_",segment_text,"_",market,"_",char1,"_",char2,".pdf"), plot=p, dpi = 300, height = 9, width = 9, units = "in")
+  # pdf(paste0("./mds_plot_files/model_plotC_", segment_text, "_", market, "_", char1, "_", char2, ".pdf"), width = 9, height = 9)
   # print(p)
   # dev.off()
 
@@ -433,8 +433,8 @@ p <- ggplot(df, aes_string(x=char1, y=char2)) + geom_point(aes(shape=make, color
 
 }
 
-ggsave(paste0("./plot_files/model_plotD_",segment_text1,segment_text2,segment_text3,"-",market,"_",char1,"_",char2,".pdf"), plot=p, dpi = 300, height = 9, width = 9, units = "in")
-# pdf(paste0("./plot_files/model_plotD_",segment_text1,segment_text2,segment_text3,"-",market,"_",char1,"_",char2,".pdf"), width = 9, height = 9)
+ggsave(paste0("./mds_plot_files/model_plotD_",segment_text1,segment_text2,segment_text3,"-",market,"_",char1,"_",char2,".pdf"), plot=p, dpi = 300, height = 9, width = 9, units = "in")
+# pdf(paste0("./mds_plot_files/model_plotD_",segment_text1,segment_text2,segment_text3,"-",market,"_",char1,"_",char2,".pdf"), width = 9, height = 9)
 # print(p)
 # dev.off()
 
@@ -455,8 +455,8 @@ p <- ggplot(df, aes_string(x=char1, y=char2)) + geom_point(aes(shape=make, color
 
 }
 
-ggsave(paste0("./plot_files/model_plotD_",segment_text1,segment_text2,segment_text3,"-",market,"_",char1,"_",char2,".pdf"), plot=p, dpi = 300, height = 9, width = 9, units = "in")
-# pdf(paste0("./plot_files/model_plotD_",segment_text1,segment_text2,segment_text3,"-",market,"_",char1,"_",char2,".pdf"), width = 9, height = 9)
+ggsave(paste0("./mds_plot_files/model_plotD_",segment_text1,segment_text2,segment_text3,"-",market,"_",char1,"_",char2,".pdf"), plot=p, dpi = 300, height = 9, width = 9, units = "in")
+# pdf(paste0("./mds_plot_files/model_plotD_",segment_text1,segment_text2,segment_text3,"-",market,"_",char1,"_",char2,".pdf"), width = 9, height = 9)
 # print(p)
 # dev.off()
 
@@ -476,8 +476,8 @@ p <- ggplot(df, aes_string(x=char1, y=char2)) + geom_point(aes(shape=make, color
   
 }
 
-ggsave(paste0("./plot_files/model_plotD_",segment_text1,segment_text2,segment_text3,"-",market,"_",char1,"_",char2,".pdf"), plot=p, dpi = 300, height = 9, width = 9, units = "in")
-# pdf(paste0("./plot_files/model_plotD_",segment_text1,segment_text2,segment_text3,"-",market,"_",char1,"_",char2,".pdf"), width = 9, height = 9)
+ggsave(paste0("./mds_plot_files/model_plotD_",segment_text1,segment_text2,segment_text3,"-",market,"_",char1,"_",char2,".pdf"), plot=p, dpi = 300, height = 9, width = 9, units = "in")
+# pdf(paste0("./mds_plot_files/model_plotD_",segment_text1,segment_text2,segment_text3,"-",market,"_",char1,"_",char2,".pdf"), width = 9, height = 9)
 # print(p)
 # dev.off()
 
