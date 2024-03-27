@@ -28,9 +28,11 @@ This codebase was built using the Pytorch neural net framework.  However, it als
     conda env create -f marketstructure_env.yml
 
 #### Data
-To download the dataset, please use the following links. Copy these files to `./one_disentanglement_hyper_selection/data/cars/`, `./three_disentanglement_hyper_selection/data/cars/`, and `./unsup_disentanglement_hyper_selection/data/cars/`.
+To download the dataset, please use the following links. 
 
 * #### [Cars Dataset](https://www.dropbox.com/scl/fi/jp96sri86wux7rca4koys/cars_original.npz?rlkey=citqff0cgh4lh4q1zrt9cegre&dl=0)
+
+Copy these files to `./one_disentanglement_hyper_selection/data/cars/`, `./three_disentanglement_hyper_selection/data/cars/`, and `./unsup_disentanglement_hyper_selection/data/cars/`.
 
 ## Replication Steps
 
