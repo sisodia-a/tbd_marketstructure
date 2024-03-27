@@ -136,7 +136,7 @@ This will produce:
 
 #### Step 5: Market Structure Maps
 
-Execute  `Rscript visualization_file.Rmd` to produce 
+Execute  `Rscript visualization_file_mds.Rmd` to produce 
 
 1. **Table 6: Descriptive Statistics of Structured Data**
 2. **Table 8: Correlation Matrix**, **Table 9: Product Characteristics**
