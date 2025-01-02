@@ -1,0 +1,310 @@
+---
+title: "The Car Project - Netzer Validation Method"
+author: "Ankit Sisodia"
+date: "May 8, 2024"
+output: html_document
+---
+
+## Importing Libraries
+
+```{r}
+
+library(caret)
+library(cowplot)
+library(dplyr)
+library(data.table)
+library(fixest)
+library(foreign)
+library(geometry)
+library(ggplot2)
+library(ggalt)
+library(ggrepel)
+library(grid)
+library(jpeg)
+library(lpdensity)
+library(lubridate)
+library(magick)
+library(MASS)  # for the isotsne function
+library(purrr)
+library(rddensity)
+library(rdrobust)
+library(rdlocrand)
+library(readstata13)
+library(readxl)
+library(reshape)
+library(Rtsne)
+library(sp)
+library(sf)
+library(SnowballC)
+library(stargazer)
+require(tidyr)
+library(tm)
+library(xgboost)
+library(xtable)
+
+rm(list=ls())
+
+```
+
+## Reading Files
+
+```{r}
+
+df5_ext <- read_excel("./honestjohn_validation/extracted_till_5.xlsx") %>% distinct()
+df5_ext$Customer <- NULL
+df6_ext <- read_excel("./honestjohn_validation/extracted6.xlsx") %>% distinct()
+df7a_ext <- read_excel("./honestjohn_validation/extracted7a.xlsx") %>% distinct()
+df7b_ext <- read_excel("./honestjohn_validation/extracted7b.xlsx") %>% distinct()
+df7c_ext <- read_excel("./honestjohn_validation/extracted7c.xlsx") %>% distinct()
+df7d_ext <- read_excel("./honestjohn_validation/extracted7d.xlsx") %>% distinct()
+df7e_ext <- read_excel("./honestjohn_validation/extracted7e.xlsx") %>% distinct()
+df7f_ext <- read_excel("./honestjohn_validation/extracted7f.xlsx") %>% distinct()
+df8a_ext <- read_excel("./honestjohn_validation/extracted8a.xlsx") %>% distinct()
+df8b_ext <- read_excel("./honestjohn_validation/extracted8b.xlsx") %>% distinct()
+df9a_ext <- read_excel("./honestjohn_validation/extracted9a.xlsx") %>% distinct()
+df9b_ext <- read_excel("./honestjohn_validation/extracted9b.xlsx") %>% distinct()
+df9c_ext <- read_excel("./honestjohn_validation/extracted9c.xlsx") %>% distinct()
+df9d_ext <- read_excel("./honestjohn_validation/extracted9d.xlsx") %>% distinct()
+df9e_ext <- read_excel("./honestjohn_validation/extracted9e.xlsx") %>% distinct()
+df9f_ext <- read_excel("./honestjohn_validation/extracted9f.xlsx") %>% distinct()
+# 
+df <- rbind(df5_ext,df6_ext,df7a_ext,df7b_ext,df7c_ext,df7d_ext,df7e_ext,df7f_ext,df8a_ext,df8b_ext,df9a_ext,df9b_ext,df9c_ext,df9d_ext,df9e_ext,df9f_ext) %>% distinct()
+
+df$orig_date <- df$Date
+df$Day <- substr(df$Date,1,3)
+df$Time <- substr(df$Date,nchar(df$Date)-4,nchar(df$Date))
+df$Date <- substr(df$Date,5,nchar(df$Date)-6)
+df$Year <- substr(df$Date,nchar(df$Date)-3,nchar(df$Date))
+df$Month <- substr(df$Date,nchar(df$Date)-7,nchar(df$Date)-5)
+df$Month <- ifelse(df$Month=="Jan","01",ifelse(df$Month=="Feb","02",ifelse(df$Month=="Mar","03",ifelse(df$Month=="Apr","04",ifelse(df$Month=="May","05",ifelse(df$Month=="Jun","06",ifelse(df$Month=="Jul","07",ifelse(df$Month=="Aug","08",ifelse(df$Month=="Sep","09",ifelse(df$Month=="Oct","10",ifelse(df$Month=="Nov","11",ifelse(df$Month=="Dec","12",NA))))))))))))
+df$Date <- substr(df$Date,1,nchar(df$Date)-9)
+df$Date <- ifelse(df$Date=="1","01",ifelse(df$Date=="2","02",ifelse(df$Date=="3","03",ifelse(df$Date=="4","04",ifelse(df$Date=="5","05",ifelse(df$Date=="6","06",ifelse(df$Date=="7","07",ifelse(df$Date=="8","08",ifelse(df$Date=="9","09",df$Date)))))))))
+df$converted_dates <- paste0(df$Year,"-",df$Month,"-",df$Date)
+
+table(df$Date)
+table(df$Month)
+table(df$Year)
+
+range(as.Date(df$converted_dates))
+
+rm(df5_ext,df6_ext,df7a_ext,df7b_ext,df7c_ext,df7d_ext,df7e_ext,df7f_ext,df8a_ext,df8b_ext,df9a_ext,df9b_ext,df9c_ext,df9d_ext,df9e_ext,df9f_ext)
+
+old_df <- df
+
+```
+
+## Reading Files
+
+```{r}
+
+df1 <- read.csv("./honestjohn_validation/extracted2016.csv") %>% distinct()
+df2 <- read.csv("./honestjohn_validation/extracted2006-7.csv") %>% distinct()
+df3 <- read.csv("./honestjohn_validation/extracted2007-8.csv") %>% distinct()
+df4 <- read.csv("./honestjohn_validation/extracted2008-10.csv") %>% distinct()
+df5 <- read.csv("./honestjohn_validation/extracted2011a.csv") %>% distinct()
+df6 <- read.csv("./honestjohn_validation/extracted2011b.csv") %>% distinct()
+df7 <- read.csv("./honestjohn_validation/extracted2012.csv") %>% distinct()
+df8 <- read.csv("./honestjohn_validation/extracted2013.csv") %>% distinct()
+df9 <- read.csv("./honestjohn_validation/extracted2014.csv") %>% distinct()
+df10 <- read.csv("./honestjohn_validation/extracted2015.csv") %>% distinct()
+df11 <- read.csv("./honestjohn_validation/extracted2017.csv") %>% distinct()
+df12 <- read.csv("./honestjohn_validation/extracted2018.csv") %>% distinct()
+df13 <- read.csv("./honestjohn_validation/extracted2019.csv") %>% distinct()
+
+df <- rbind(df1,df2,df3,df4,df5,df6,df7,df8,df9,df10,df11,df12,df13) %>% distinct()
+
+df$orig_date <- df$Date
+df$Day <- substr(df$Date,1,3)
+df$Time <- substr(df$Date,nchar(df$Date)-4,nchar(df$Date))
+df$Date <- substr(df$Date,5,nchar(df$Date)-6)
+df$Year <- substr(df$Date,nchar(df$Date)-3,nchar(df$Date))
+df$Month <- substr(df$Date,nchar(df$Date)-7,nchar(df$Date)-5)
+df$Month <- ifelse(df$Month=="Jan","01",ifelse(df$Month=="Feb","02",ifelse(df$Month=="Mar","03",ifelse(df$Month=="Apr","04",ifelse(df$Month=="May","05",ifelse(df$Month=="Jun","06",ifelse(df$Month=="Jul","07",ifelse(df$Month=="Aug","08",ifelse(df$Month=="Sep","09",ifelse(df$Month=="Oct","10",ifelse(df$Month=="Nov","11",ifelse(df$Month=="Dec","12",NA))))))))))))
+df$Date <- substr(df$Date,1,nchar(df$Date)-9)
+df$Date <- ifelse(df$Date=="1","01",ifelse(df$Date=="2","02",ifelse(df$Date=="3","03",ifelse(df$Date=="4","04",ifelse(df$Date=="5","05",ifelse(df$Date=="6","06",ifelse(df$Date=="7","07",ifelse(df$Date=="8","08",ifelse(df$Date=="9","09",df$Date)))))))))
+df$converted_dates <- paste0(df$Year,"-",df$Month,"-",df$Date)
+
+table(df$Date)
+table(df$Month)
+table(df$Year)
+
+range(as.Date(df$converted_dates))
+
+rm(df1,df2,df3,df4,df5,df6,df7,df8,df9,df10,df11,df12,df13)
+
+df14 <- read.csv("./honestjohn_validation/extracted2010.csv") %>% distinct()
+
+df14$orig_date <- df14$Date
+df14$Day <- NA
+df14$Time <- substr(df14$orig_date,12,19)
+df14$Date <- substr(df14$orig_date,9,10)
+df14$Year <- substr(df14$orig_date,1,4)
+df14$Month <- substr(df14$orig_date,6,7)
+df14$converted_dates <- paste0(df14$Year,"-",df14$Month,"-",df14$Date)
+
+df <- rbind(df,df14) %>% distinct()
+rm(df14)
+
+table(df$Date)
+table(df$Month)
+table(df$Year)
+
+new_df <- df
+rm(df)
+
+```
+
+## Combining older approach and newer approach
+
+```{r}
+
+df <- rbind(old_df,new_df)
+df <- unique(df[,c("orig_date","converted_dates","Message","Year")])
+# df <- df %>% distinct()
+
+stop_words <- stopwords("en")
+# df$title_message <- paste(df$Title,df$Message)
+df$title_message <- removeWords(tolower(df$Message), stop_words)
+df$title_message <- wordStem(df$title_message, language = "en")
+df$title_message <- gsub("[^[:alnum:] ]", "", df$title_message)
+df$title_message <- gsub("[[:punct:]]", "", df$title_message)
+# df$title_message <- gsub("  ", " ", df$title_message)
+df$Message <- NULL
+df <- df %>% distinct()
+
+table(df$Year)
+
+# rm(old_df,new_df)
+
+```
+
+## BLP Data
+
+```{r}
+
+uk_product_data <- read.csv('exp_uk_product_data.csv', stringsAsFactors=FALSE)
+
+uk_product_data$old_segment_desc <- uk_product_data$Segment_Desc
+uk_product_data$segment_name <- ifelse(uk_product_data$Segment_Desc=="A-Segment (Minicars)","A",ifelse(uk_product_data$Segment_Desc=="B-segment (subcompact)","B",ifelse(uk_product_data$Segment_Desc=="C-segment (compact)","C",ifelse(uk_product_data$Segment_Desc=="D-segment (mid-size)","D",ifelse(uk_product_data$Segment_Desc=="E-segment (mid-size luxury sedan)","E",ifelse(uk_product_data$Segment_Desc=="J-segment (SUV)","J",ifelse(uk_product_data$Segment_Desc=="M-segment (MPV)","M","X")))))))
+uk_product_data$Segment_Desc <- NULL
+
+uk_product_data <- uk_product_data %>% dplyr::select(clustering_ids,make,model,market_ids,segment_name,car_ids,firm_ids,quantity,shares)
+
+select_image_table <- read.csv('exp_selected_python_image_table.csv',stringsAsFactors = FALSE)
+
+df_data <- merge(uk_product_data,select_image_table,all.x = TRUE)
+df_data$Image_name <- NULL
+
+top_makes_for_latex <- df_data %>% filter(segment_name == "B" | segment_name == "D" | segment_name == "J") %>% group_by(make) %>% summarise(total_shares = sum(shares)) %>% slice_max(order_by = total_shares, n = 5) %>% pull(make)
+segment_value <- sort(unique(df_data$segment_name))
+
+rm(select_image_table,uk_product_data)
+
+```
+
+## Pre-processing
+
+```{r}
+
+# Function to generate a regex for basic spelling tolerance (e.g., missing one letter)
+function_regex <- function(text_string) {
+  # Replace spaces in the make/model name with a regex that allows spaces, hyphens, or periods
+  # Convert make/model to lowercase for case insensitivity in matching
+  escaped_text_string <- tolower(text_string)
+  escaped_text_string <- gsub(" ", "[-\\. ]*", escaped_text_string) # Allow zero or more of -, ., or space between words
+  escaped_text_string <- gsub("([\\.\\+\\*\\?\\[\\^\\]\\$\\(\\)\\{\\}\\=\\!\\<\\>\\|\\:\\-])", "\\\\\\1", escaped_text_string) # Escape special regex characters
+
+  # Create a regex pattern that ensures the match is bounded by spaces or start/end of the string
+  regex <- paste0("(^|\\s)", escaped_text_string, "($|\\s)")
+  return(regex)
+}
+
+makemodel_tsne <- function(market) {
+  df_filtered <- df %>% filter(Year==market)
+  df_temp <- df_data %>% filter(market_ids==market) %>% dplyr::select(make)
+  unique_makemodel <- unique(df_data[,c("clustering_ids","make","model","segment_name")]) %>% filter(model!="500" & model!="GS")
+
+  for(makemodel in unique_makemodel$model) {
+  regex <- function_regex(makemodel)  # Generate the regex for each model
+  variable_name <- paste0("is_makemodel_", tolower(gsub("[-\\. ]", "_", makemodel)))  # Create a valid variable name
+  df_filtered[[variable_name]] <- grepl(regex, df_filtered$title_message, perl = TRUE)  # Use perl = TRUE for complex regex
+  }
+  
+  df_makemodel <- df_filtered[,c(5:ncol(df_filtered))]
+  
+  prob_makemodel <- colMeans(df_makemodel)
+  makemodel <- names(prob_makemodel)  # get column names
+  prob_makemodel_joint <- matrix(nrow = ncol(df_makemodel), ncol = ncol(df_makemodel), dimnames = list(makemodel, makemodel))
+  
+  for (i in 1:ncol(df_makemodel)) {
+    for (j in 1:ncol(df_makemodel)) {
+      if (i != j) {
+      # Probability of both makes appearing in the same message
+      prob_makemodel_joint[i, j] <- mean(df_makemodel[, makemodel[i]] & df_makemodel[, makemodel[j]])
+    } else {
+      # The diagonal should be the probability of the make itself
+      prob_makemodel_joint[i, j] <- prob_makemodel[i]
+    }
+  }
+}
+  lift_matrix <- matrix(nrow = ncol(df_makemodel), ncol = ncol(df_makemodel), dimnames = list(unique_makemodel$clustering_ids, unique_makemodel$clustering_ids))
+
+  for (i in 1:ncol(df_makemodel)) {
+    for (j in 1:ncol(df_makemodel)) {
+      lift_matrix[i, j] <- ifelse(prob_makemodel[i] * prob_makemodel[j] == 0, 0, prob_makemodel_joint[i, j] / (prob_makemodel[i] * prob_makemodel[j]))
+    }
+    }
+  
+  diag(lift_matrix) <- 0
+  makemodel_lift_matrix <- lift_matrix
+  
+  dist_matrix <- 1 / makemodel_lift_matrix
+  dist_matrix[is.infinite(dist_matrix)] <- max(dist_matrix[is.finite(dist_matrix)]) * 10 # Set infinite values to a large number
+  dist_matrix <- as.dist(dist_matrix)
+  tsne_result <- Rtsne(dist_matrix, check_duplicates = FALSE)
+  tsne_result <- tsne_result$Y
+  
+  tsne_coords <- data.frame(f_x = tsne_result[, 1], f_y = tsne_result[, 2], clustering_ids = unique_makemodel$clustering_ids, make = unique_makemodel$make, model = unique_makemodel$model, segment_name = unique_makemodel$segment_name)
+  
+  return(tsne_coords)
+  
+}
+```
+
+## Plot Function
+
+```{r}
+
+main_tsne_function <- function(tsne_data_df, segment_text1, segment_text2, segment_text3, market) {
+
+df_temp <- tsne_data_df
+df_temp <- df_temp %>% filter(segment_name==segment_text1 | segment_name==segment_text2 | segment_name==segment_text3)
+df_temp <- df_temp %>% filter(make %in% top_makes_for_latex)
+df <- df_temp
+char1 <- "f_x"
+char2 <- "f_y"
+
+p <- ggplot(df, aes_string(x=char1, y=char2)) + geom_point(aes(shape=make, color=segment_name), alpha=0.95, size=4) + theme_minimal() + guides(size=FALSE) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), legend.text = element_text(size=16), axis.title.x = element_text(size=16), axis.title.y = element_text(size=16), axis.text.x = element_text(size=16), axis.text.y = element_text(size=16)) + scale_x_continuous(limits = c(1.2*min(df_temp[[char1]]), 1.2*max(df_temp[[char1]]))) + scale_y_continuous(limits = c(1.2*min(df_temp[[char2]]), 1.2*max(df_temp[[char2]]))) + scale_color_discrete(guide = guide_legend(title = NULL)) + scale_shape_manual(values=1:(nlevels(factor(df$make))),guide = guide_legend(title = NULL)) + theme(legend.position = "bottom", legend.box = "vertical") + xlab("X-AXIS") + ylab("Y-AXIS")  + theme(plot.title = element_text(hjust = 0.5)) + geom_text_repel(aes(label=model), hjust=0, vjust=0, size=6, alpha = 0.9)
+
+for (seg in segment_value) {
+  df_seg = df[df$segment_name == seg, ]
+  p <- p + geom_encircle(data = df_seg, aes_string(x=char1, y=char2, color = "segment_name"), alpha = 0.3, expand = 0.01)
+}
+
+ggsave(paste0("./honestjohn_tsne_plot_files/model_plotD_tsne_",segment_text1,segment_text2,segment_text3,"-",market,"_",char1,"_",char2,".pdf"), plot=p, dpi = 300, height = 9, width = 9, units = "in")
+
+}
+
+```
+
+## Execution
+
+```{r}
+
+for(market in 2008:2017){
+  tsne_result <- makemodel_tsne(market)
+  write.csv(tsne_result,paste0("./input_validation_test/tsne_forum_", market,".csv"),row.names = FALSE)
+  main_tsne_function(tsne_result,"B","D","J",market)
+}
+
+```

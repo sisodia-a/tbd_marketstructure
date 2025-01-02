@@ -1,0 +1,114 @@
+---
+title: "The Car Project - Netzer Validation Method"
+author: "Ankit Sisodia"
+date: "May 8, 2024"
+output: html_document
+---
+
+## Importing Libraries
+
+```{r}
+
+library(caret)
+library(cowplot)
+library(dplyr)
+library(data.table)
+library(fixest)
+library(foreign)
+library(geometry)
+library(ggplot2)
+library(ggalt)
+library(ggrepel)
+library(grid)
+library(jpeg)
+library(lpdensity)
+library(lubridate)
+library(magick)
+library(MASS)  # for the isoMDS function
+library(purrr)
+library(rddensity)
+library(rdrobust)
+library(rdlocrand)
+library(readstata13)
+library(readxl)
+library(reshape)
+library(sp)
+library(sf)
+library(SnowballC)
+library(stargazer)
+require(tidyr)
+library(tm)
+library(xgboost)
+library(xtable)
+
+rm(list=ls())
+
+```
+
+
+```{r}
+
+load_and_dist <- function(method, approach, year) {
+  filepath <- paste0("./output_validation_test/", method, "_", approach, "_", year, ".csv")
+  data <- read.csv(filepath, stringsAsFactors = FALSE)
+  data <- data %>% filter(clustering_ids!="2_2" & clustering_ids!="2_4" & clustering_ids!="2_6" & clustering_ids!="3_1" & clustering_ids!="3_4" & clustering_ids!="3_6" & clustering_ids!="14_1" & clustering_ids!="14_2" & clustering_ids!="14_3" & clustering_ids!="14_5" & clustering_ids!="21_1" & clustering_ids!="21_3" & clustering_ids!="21_5" & clustering_ids!="35_2" & clustering_ids!="35_3" & clustering_ids!="37_11" & clustering_ids!="37_2" & clustering_ids!="37_5"  & clustering_ids!="37_6" & clustering_ids!="37_7" & clustering_ids!="37_8"  & clustering_ids!="37_9" & clustering_ids!="55_5" & clustering_ids!="55_9"  & clustering_ids!="68_1" & clustering_ids!="68_2" & clustering_ids!="68_3"  & clustering_ids!="85_1" & clustering_ids!="85_3" & clustering_ids!="85_5"  & clustering_ids!="85_6" & clustering_ids!="85_7" & clustering_ids!="54_1"  & clustering_ids!="54_4" & clustering_ids!="54_6" & clustering_ids!="54_7"  & clustering_ids!="79_1" & clustering_ids!="79_10" & clustering_ids!="79_11" & clustering_ids!="79_12" & clustering_ids!="79_2" & clustering_ids!="79_6" & clustering_ids!="79_8" & clustering_ids!="79_9" & clustering_ids!="84_1" & clustering_ids!="84_2")
+  dist_matrix <- as.matrix(dist(data[, c("x", "y")]))
+  return(dist_matrix)
+}
+
+# Define the range of years and methods
+years <- 2008:2017
+methods <- c("mds", "tsne")
+
+# Initialize a data frame to store the results
+results_df <- data.frame(year = integer(), method = character(), str = numeric(), 
+                         viz = numeric(), comb = numeric(), str_viz = numeric())
+
+# Loop over each method and year
+for (method in methods) {
+  for (year in years) {
+    # Load distance matrices for each method and data type
+    str_dist_matrix <- load_and_dist(method, "structured", year)
+    viz_dist_matrix <- load_and_dist(method, "visual", year)
+    comb_dist_matrix <- load_and_dist(method, "combination", year)
+    forum_dist_matrix <- load_and_dist(method, "forum", year)
+
+    # Extract upper triangular non-diagonal elements as vectors
+    str_vec <- as.vector(str_dist_matrix[upper.tri(str_dist_matrix)])
+    viz_vec <- as.vector(viz_dist_matrix[upper.tri(viz_dist_matrix)])
+    comb_vec <- as.vector(comb_dist_matrix[upper.tri(comb_dist_matrix)])
+    forum_vec <- as.vector(forum_dist_matrix[upper.tri(forum_dist_matrix)])
+
+    # Perform linear regressions
+    lm_str <- summary(lm(forum_vec ~ str_vec))
+    lm_viz <- summary(lm(forum_vec ~ viz_vec))
+    lm_str_viz <- summary(lm(forum_vec ~ str_vec + viz_vec))
+    lm_comb <- summary(lm(forum_vec ~ comb_vec))
+
+    # Extract R2 from each regression
+    r2_str <- lm_str$r.squared
+    r2_viz <- lm_viz$r.squared
+    r2_comb <- lm_comb$r.squared
+    r2_str_viz <- lm_str_viz$r.squared
+
+    # Append results to the data frame
+    results_df <- rbind(results_df, data.frame(year = year, method = method, 
+                                               str = r2_str, viz = r2_viz, 
+                                               comb = r2_comb, str_viz = r2_str_viz))
+  }
+}
+
+# Display the final results data frame
+mean(results_df$str[results_df$method=="mds"])
+mean(results_df$viz[results_df$method=="mds"])
+mean(results_df$comb[results_df$method=="mds"])
+mean(results_df$str_viz[results_df$method=="mds"])
+
+mean(results_df$str[results_df$method=="tsne"])
+mean(results_df$viz[results_df$method=="tsne"])
+mean(results_df$comb[results_df$method=="tsne"])
+mean(results_df$str_viz[results_df$method=="tsne"])
+
+
+```
+

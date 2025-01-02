@@ -1,0 +1,251 @@
+---
+title: "The Car Project - Netzer Validation Method"
+author: "Ankit Sisodia"
+date: "May 11, 2024"
+output: html_document
+---
+
+## Importing Libraries
+
+```{r}
+
+library(caret)
+library(cowplot)
+library(dplyr)
+library(data.table)
+library(fixest)
+library(foreign)
+library(geometry)
+library(ggplot2)
+library(ggalt)
+library(ggrepel)
+library(grid)
+library(jpeg)
+library(lpdensity)
+library(lubridate)
+library(magick)
+library(MASS)  # for the isotsne function
+library(purrr)
+library(rddensity)
+library(rdrobust)
+library(rdlocrand)
+library(readstata13)
+library(readxl)
+library(reshape)
+library(Rtsne)
+library(sp)
+library(sf)
+library(SnowballC)
+library(stargazer)
+require(tidyr)
+library(tm)
+library(xgboost)
+library(xtable)
+
+rm(list=ls())
+
+```
+
+## Approach
+
+```{r}
+
+# Function to calculate Euclidean distance matrix
+calculate_distance_matrix <- function(data) {
+  as.matrix(dist(data[, c("x", "y")]))
+}
+
+# Generate all possible triplets of brands
+generate_triplets <- function(brands) {
+  combn(brands, 3, simplify = FALSE)
+}
+
+# Evaluate triplet based on the distance matrix
+evaluate_triplet <- function(matrix, triplet) {
+  i <- triplet[1]
+  j <- triplet[2]
+  k <- triplet[3]
+  if (matrix[i, j] < matrix[i, k]) 1 else 0
+}
+
+# Function to calculate the agreement rate for triplets across multiple matrices
+calculate_triplet_agreement <- function(matrices, brand_ids) {
+  triplets <- generate_triplets(brand_ids)
+  evaluations <- lapply(triplets, function(triplet) {
+    sapply(matrices, evaluate_triplet, triplet = triplet)
+  })
+
+  # Transform list of evaluations into a matrix for easier comparison
+  evaluation_matrix <- do.call(cbind, evaluations)
+
+  # Calculate agreement rate by comparing evaluations across datasets for each triplet
+  agreement_rates <- apply(evaluation_matrix, 2, function(col) {
+    all(col == col[1])  # Compare all elements in a column to the first element
+  })
+
+  mean(agreement_rates, na.rm = TRUE)
+}
+
+# Main function to process datasets and compare using triplets
+compare_triplets_across_years <- function(start_year, end_year, methods, approaches) {
+  results <- list()
+
+  for (method in methods) {
+    for (year in start_year:end_year) {
+      matrices <- lapply(approaches, function(approach) {
+        data_path <- paste0("./output_validation_test/", method, "_", approach, "_", year, ".csv")
+        data <- tryCatch({
+          read.csv(data_path, stringsAsFactors = FALSE)
+        }, error = function(e) {
+          cat("Failed to load data for", approach, "in", year, "with error:", e$message, "\n")
+          NULL
+        })
+        if (!is.null(data)) {
+          calculate_distance_matrix(data)
+        } else {
+          return(NULL)
+        }
+      })
+      
+      if (length(matrices) != length(approaches) || any(sapply(matrices, is.null))) {
+        cat("Skipping due to data loading issues or incomplete data\n")
+        next
+      }
+      
+      # Assuming brand_ids are integers starting from 1 to n (number of brands)
+      brand_ids <- seq_len(nrow(matrices[[1]]))
+      agreement_rate <- calculate_triplet_agreement(matrices, brand_ids)
+      results[[length(results) + 1]] <- data.frame(year = year, method = method, agreement_rate = agreement_rate)
+    }
+  }
+  
+  if (length(results) == 0) {
+    cat("No results were generated.\n")
+    return(NULL)
+  } else {
+    final_results <- do.call(rbind, results)
+    return(final_results)
+  }
+}
+
+result1 <- compare_triplets_across_years(2008, 2017, c("mds", "tsne"),c("structured", "forum"))
+print(result1)
+
+result2 <- compare_triplets_across_years(2008, 2017, c("mds", "tsne"),c("visual", "forum"))
+print(result2)
+
+result3 <- compare_triplets_across_years(2008, 2017, c("mds", "tsne"),c("combination", "forum"))
+print(result3)
+
+mean(result1$agreement_rate[result1$method=="mds"])
+mean(result2$agreement_rate[result1$method=="mds"])
+mean(result3$agreement_rate[result1$method=="mds"])
+
+mean(result1$agreement_rate[result1$method=="tsne"])
+mean(result2$agreement_rate[result1$method=="tsne"])
+mean(result3$agreement_rate[result1$method=="tsne"])
+
+names(result1)[3] <- "structured_agreement_rate"
+names(result2)[3] <- "visual_agreement_rate"
+names(result3)[3] <- "combination_agreement_rate"
+
+results <- merge(result1,result2)
+results <- merge(results,result3)
+rm(result1,result2,result3)
+
+```
+
+## Alternative
+
+```{r}
+
+calculate_distance_matrix <- function(data) {
+  as.matrix(dist(data[, c("x", "y")]))
+}
+
+calculate_agreement_rate <- function(matrices) {
+  combn(seq_along(matrices), 2, function(indexes) {
+    m1 <- matrices[[indexes[1]]]
+    m2 <- matrices[[indexes[2]]]
+    mean(m1 < m2)  # assuming you want to compare if distances in m1 are less than m2
+  }) %>% mean()
+}
+
+compare_triplets_across_years <- function(start_year, end_year, methods) {
+  approaches <- c("structured", "forum")
+  results <- list()
+  
+  for (method in methods) {
+    for (year in start_year:end_year) {
+      dist_matrices <- lapply(approaches, function(approach) {
+        data_path <- paste0("./output_validation_test/", method, "_", approach, "_", year, ".csv")
+        data <- read.csv(data_path, stringsAsFactors = FALSE)
+        calculate_distance_matrix(data)
+      })
+      
+      agreement_rate <- calculate_agreement_rate(dist_matrices)
+      results[[length(results) + 1]] <- data.frame(year = year, method = method, agreement_rate = agreement_rate)
+    }
+  }
+  
+  do.call(rbind, results)
+}
+
+results1 <- compare_triplets_across_years(2008, 2017, c("mds", "tsne"))
+
+compare_triplets_across_years <- function(start_year, end_year, methods) {
+  approaches <- c("visual", "forum")
+  results <- list()
+  
+  for (method in methods) {
+    for (year in start_year:end_year) {
+      dist_matrices <- lapply(approaches, function(approach) {
+        data_path <- paste0("./output_validation_test/", method, "_", approach, "_", year, ".csv")
+        data <- read.csv(data_path, stringsAsFactors = FALSE)
+        calculate_distance_matrix(data)
+      })
+      
+      agreement_rate <- calculate_agreement_rate(dist_matrices)
+      results[[length(results) + 1]] <- data.frame(year = year, method = method, agreement_rate = agreement_rate)
+    }
+  }
+  
+  do.call(rbind, results)
+}
+
+results2 <- compare_triplets_across_years(2008, 2017, c("mds", "tsne"))
+
+compare_triplets_across_years <- function(start_year, end_year, methods) {
+  approaches <- c("combination", "forum")
+  results <- list()
+  
+  for (method in methods) {
+    for (year in start_year:end_year) {
+      dist_matrices <- lapply(approaches, function(approach) {
+        data_path <- paste0("./output_validation_test/", method, "_", approach, "_", year, ".csv")
+        data <- read.csv(data_path, stringsAsFactors = FALSE)
+        calculate_distance_matrix(data)
+      })
+      
+      agreement_rate <- calculate_agreement_rate(dist_matrices)
+      results[[length(results) + 1]] <- data.frame(year = year, method = method, agreement_rate = agreement_rate)
+    }
+  }
+  
+  do.call(rbind, results)
+}
+
+results3 <- compare_triplets_across_years(2008, 2017, c("mds", "tsne"))
+
+names(results1)[3] <- "structured_agreement_rate"
+names(results2)[3] <- "visual_agreement_rate"
+names(results3)[3] <- "combination_agreement_rate"
+
+results <- merge(results1,results2)
+results <- merge(results,results3)
+rm(results1,results2,results3)
+
+```
+
+
+

@@ -1,0 +1,135 @@
+---
+title: "The Car Project - Netzer Validation Method"
+author: "Ankit Sisodia"
+date: "May 11, 2024"
+output: html_document
+---
+
+## Importing Libraries
+
+```{r}
+
+library(caret)
+library(cowplot)
+library(dplyr)
+library(data.table)
+library(fixest)
+library(foreign)
+library(geometry)
+library(ggplot2)
+library(ggalt)
+library(ggrepel)
+library(grid)
+library(jpeg)
+library(lpdensity)
+library(lubridate)
+library(magick)
+library(MASS)  # for the isotsne function
+library(purrr)
+library(rddensity)
+library(rdrobust)
+library(rdlocrand)
+library(readstata13)
+library(readxl)
+library(reshape)
+library(Rtsne)
+library(sp)
+library(sf)
+library(SnowballC)
+library(stargazer)
+require(tidyr)
+library(tm)
+library(xgboost)
+library(xtable)
+
+rm(list=ls())
+
+```
+
+## Cleaning Up Forum Data
+
+```{r}
+
+for(year in 2008:2017){
+    forum_data <- read.csv(paste0("./output_validation_test/mds_forum_",year,".csv"),stringsAsFactors = FALSE)
+    print(dim(forum_data))
+    structured_data <- read.csv(paste0("./output_validation_test/mds_structured_",year,".csv"),stringsAsFactors = FALSE)
+    forum_data <- merge(forum_data,structured_data[ , "clustering_ids", drop = FALSE],by = "clustering_ids")
+    print(dim(forum_data))
+    write.csv(forum_data,paste0("./output_validation_test/mds_forum_", year,".csv"),row.names = FALSE)
+}
+
+for(year in 2008:2017){
+    forum_data <- read.csv(paste0("./output_validation_test/tsne_forum_",year,".csv"),stringsAsFactors = FALSE)
+    print(dim(forum_data))
+    structured_data <- read.csv(paste0("./output_validation_test/tsne_structured_",year,".csv"),stringsAsFactors = FALSE)
+    forum_data <- merge(forum_data,structured_data[ , "clustering_ids", drop = FALSE],by = "clustering_ids")
+    print(dim(forum_data))
+    write.csv(forum_data,paste0("./output_validation_test/tsne_forum_", year,".csv"),row.names = FALSE)
+}
+
+for(year in 2008:2017){
+    structured_data <- read.csv(paste0("./output_validation_test/mds_structured_",year,".csv"),stringsAsFactors = FALSE)
+    visual_data <- read.csv(paste0("./output_validation_test/mds_visual_",year,".csv"),stringsAsFactors = FALSE)
+    combination_data <- read.csv(paste0("./output_validation_test/mds_combination_",year,".csv"),stringsAsFactors = FALSE)
+    forum_data <- read.csv(paste0("./output_validation_test/mds_forum_",year,".csv"),stringsAsFactors = FALSE)
+    structured_data <- merge(structured_data,forum_data[ , "clustering_ids", drop = FALSE],by = "clustering_ids")
+    visual_data <- merge(visual_data,forum_data[ , "clustering_ids", drop = FALSE],by = "clustering_ids")
+    combination_data <- merge(combination_data,forum_data[ , "clustering_ids", drop = FALSE],by = "clustering_ids")
+    
+    print(dim(forum_data))
+    print(dim(structured_data))
+    print(dim(visual_data))
+    print(dim(combination_data))
+
+    structured_data <- structured_data[,c("clustering_ids","s_x","s_y")]
+    visual_data <- visual_data[,c("clustering_ids","v_x","v_y")]
+    combination_data <- combination_data[,c("clustering_ids","m_x","m_y")]
+    forum_data <- forum_data[,c("clustering_ids","f_x","f_y")]
+    
+    names(structured_data) <- c("clustering_ids","x","y")
+    names(visual_data) <- c("clustering_ids","x","y")
+    names(combination_data) <- c("clustering_ids","x","y")
+    names(forum_data) <- c("clustering_ids","x","y")
+    
+    write.csv(structured_data,paste0("./output_validation_test/mds_structured_", year,".csv"),row.names = FALSE)
+    write.csv(visual_data,paste0("./output_validation_test/mds_visual_", year,".csv"),row.names = FALSE)
+    write.csv(combination_data,paste0("./output_validation_test/mds_combination_", year,".csv"),row.names = FALSE)
+    write.csv(forum_data,paste0("./output_validation_test/mds_forum_", year,".csv"),row.names = FALSE)
+
+}
+
+for(year in 2008:2017){
+    structured_data <- read.csv(paste0("./output_validation_test/tsne_structured_",year,".csv"),stringsAsFactors = FALSE)
+    visual_data <- read.csv(paste0("./output_validation_test/tsne_visual_",year,".csv"),stringsAsFactors = FALSE)
+    combination_data <- read.csv(paste0("./output_validation_test/tsne_combination_",year,".csv"),stringsAsFactors = FALSE)
+    forum_data <- read.csv(paste0("./output_validation_test/tsne_forum_",year,".csv"),stringsAsFactors = FALSE)
+    structured_data <- merge(structured_data,forum_data[ , "clustering_ids", drop = FALSE],by = "clustering_ids")
+    visual_data <- merge(visual_data,forum_data[ , "clustering_ids", drop = FALSE],by = "clustering_ids")
+    combination_data <- merge(combination_data,forum_data[ , "clustering_ids", drop = FALSE],by = "clustering_ids")
+    
+    print(dim(forum_data))
+    print(dim(structured_data))
+    print(dim(visual_data))
+    print(dim(combination_data))
+    
+    structured_data <- structured_data[,c("clustering_ids","s_x","s_y")]
+    visual_data <- visual_data[,c("clustering_ids","v_x","v_y")]
+    combination_data <- combination_data[,c("clustering_ids","m_x","m_y")]
+    forum_data <- forum_data[,c("clustering_ids","f_x","f_y")]
+    
+    names(structured_data) <- c("clustering_ids","x","y")
+    names(visual_data) <- c("clustering_ids","x","y")
+    names(combination_data) <- c("clustering_ids","x","y")
+    names(forum_data) <- c("clustering_ids","x","y")
+
+    write.csv(structured_data,paste0("./output_validation_test/tsne_structured_", year,".csv"),row.names = FALSE)
+    write.csv(visual_data,paste0("./output_validation_test/tsne_visual_", year,".csv"),row.names = FALSE)
+    write.csv(combination_data,paste0("./output_validation_test/tsne_combination_", year,".csv"),row.names = FALSE)
+    write.csv(forum_data,paste0("./output_validation_test/tsne_forum_", year,".csv"),row.names = FALSE)
+}
+
+rm(combination_data,forum_data,structured_data,visual_data,year)
+
+```
+

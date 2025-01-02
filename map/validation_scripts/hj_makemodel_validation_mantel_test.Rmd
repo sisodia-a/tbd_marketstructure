@@ -1,0 +1,117 @@
+---
+title: "The Car Project - Netzer Validation Method"
+author: "Ankit Sisodia"
+date: "May 11, 2024"
+output: html_document
+---
+
+## Importing Libraries
+
+```{r}
+
+library(caret)
+library(cowplot)
+library(dplyr)
+library(data.table)
+library(fixest)
+library(foreign)
+library(geometry)
+library(ggplot2)
+library(ggalt)
+library(ggrepel)
+library(grid)
+library(jpeg)
+library(lpdensity)
+library(lubridate)
+library(magick)
+library(MASS)  # for the isotsne function
+library(purrr)
+library(rddensity)
+library(rdrobust)
+library(rdlocrand)
+library(readstata13)
+library(readxl)
+library(reshape)
+library(Rtsne)
+library(sp)
+library(sf)
+library(SnowballC)
+library(stargazer)
+require(tidyr)
+library(tm)
+library(xgboost)
+library(xtable)
+
+rm(list=ls())
+
+```
+
+## Correlations
+
+```{r}
+
+load_and_dist <- function(method, approach, year) {
+  filepath <- paste0("./output_validation_test/", method, "_", approach, "_", year, ".csv")
+  data <- read.csv(filepath, stringsAsFactors = FALSE)
+  # data <- data %>% filter(clustering_ids!="2_2" & clustering_ids!="2_4" & clustering_ids!="2_6" & clustering_ids!="3_1" & clustering_ids!="3_4" & clustering_ids!="3_6" & clustering_ids!="14_1" & clustering_ids!="14_2" & clustering_ids!="14_3" & clustering_ids!="14_5" & clustering_ids!="21_1" & clustering_ids!="21_3" & clustering_ids!="21_5" & clustering_ids!="35_2" & clustering_ids!="35_3" & clustering_ids!="37_11" & clustering_ids!="37_2" & clustering_ids!="37_5"  & clustering_ids!="37_6" & clustering_ids!="37_7" & clustering_ids!="37_8"  & clustering_ids!="37_9" & clustering_ids!="55_5" & clustering_ids!="55_9"  & clustering_ids!="68_1" & clustering_ids!="68_2" & clustering_ids!="68_3"  & clustering_ids!="85_1" & clustering_ids!="85_3" & clustering_ids!="85_5"  & clustering_ids!="85_6" & clustering_ids!="85_7" & clustering_ids!="54_1"  & clustering_ids!="54_4" & clustering_ids!="54_6" & clustering_ids!="54_7"  & clustering_ids!="79_1" & clustering_ids!="79_10" & clustering_ids!="79_11" & clustering_ids!="79_12" & clustering_ids!="79_2" & clustering_ids!="79_6" & clustering_ids!="79_8" & clustering_ids!="79_9" & clustering_ids!="84_1" & clustering_ids!="84_2")
+  dist_matrix <- as.matrix(dist(data[, c("x", "y")]))
+  return(dist_matrix)
+}
+
+compare_correlations <- function(start_year=2008, end_year=2017, methods=c("mds", "tsne")) {
+  approaches <- c("structured", "visual", "combination", "forum")
+  results <- data.frame(year=integer(), method=character(), 
+                        cor_forum_structured=numeric(), 
+                        cor_forum_visual=numeric(), 
+                        cor_forum_combination=numeric())
+  
+  for (method in methods) {
+    for (year in start_year:end_year) {
+      dist_matrices <- list()
+      for (approach in approaches) {
+        dist_matrices[[approach]] <- load_and_dist(method, approach, year)
+      }
+
+      # Extract upper triangles of the matrices as vector
+      forum_vec <- as.vector(dist_matrices[["forum"]][upper.tri(dist_matrices[["forum"]])])
+      structured_vec <- as.vector(dist_matrices[["structured"]][upper.tri(dist_matrices[["structured"]])])
+      visual_vec <- as.vector(dist_matrices[["visual"]][upper.tri(dist_matrices[["visual"]])])
+      combination_vec <- as.vector(dist_matrices[["combination"]][upper.tri(dist_matrices[["combination"]])])
+      
+      # Compute correlations
+      cor_forum_structured <- cor(forum_vec, structured_vec)
+      cor_forum_visual <- cor(forum_vec, visual_vec)
+      cor_forum_combination <- cor(forum_vec, combination_vec)
+      
+      # Append results to the dataframe
+      results <- rbind(results, data.frame(year=year, method=method, 
+                            cor_forum_structured=cor_forum_structured, 
+                            cor_forum_visual=cor_forum_visual, 
+                            cor_forum_combination=cor_forum_combination))
+    }
+  }
+  
+  return(results)
+}
+
+# Execute the function
+correlation_results <- compare_correlations()
+# print(correlation_results)
+
+mean(abs(correlation_results$cor_forum_structured[correlation_results$method=="mds"]))
+mean(abs(correlation_results$cor_forum_visual[correlation_results$method=="mds"]))
+mean(abs(correlation_results$cor_forum_combination[correlation_results$method=="mds"]))
+
+mean(abs(correlation_results$cor_forum_structured[correlation_results$method=="tsne"]))
+mean(abs(correlation_results$cor_forum_visual[correlation_results$method=="tsne"]))
+mean(abs(correlation_results$cor_forum_combination[correlation_results$method=="tsne"]))
+
+mean((correlation_results$cor_forum_structured[correlation_results$method=="mds"]))
+mean((correlation_results$cor_forum_visual[correlation_results$method=="mds"]))
+mean((correlation_results$cor_forum_combination[correlation_results$method=="mds"]))
+
+mean((correlation_results$cor_forum_structured[correlation_results$method=="tsne"]))
+mean((correlation_results$cor_forum_visual[correlation_results$method=="tsne"]))
+mean((correlation_results$cor_forum_combination[correlation_results$method=="tsne"]))
+
+```

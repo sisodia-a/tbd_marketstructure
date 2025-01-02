@@ -1,0 +1,287 @@
+---
+title: "The Car Project - Netzer Validation Method"
+author: "Ankit Sisodia"
+date: "May 11, 2024"
+output: html_document
+---
+
+## Importing Libraries
+
+```{r}
+
+library(caret)
+library(cowplot)
+library(dplyr)
+library(data.table)
+library(fixest)
+library(foreign)
+library(geometry)
+library(ggplot2)
+library(ggalt)
+library(ggrepel)
+library(grid)
+library(jpeg)
+library(lpdensity)
+library(lubridate)
+library(magick)
+library(MASS)  # for the isotsne function
+library(purrr)
+library(randomForest)
+library(rddensity)
+library(rdrobust)
+library(rdlocrand)
+library(readstata13)
+library(readxl)
+library(reshape)
+library(Rtsne)
+library(sp)
+library(sf)
+library(SnowballC)
+library(stargazer)
+require(tidyr)
+library(tm)
+library(xgboost)
+library(xtable)
+
+rm(list=ls())
+
+```
+
+## OOS Results randomForest
+
+```{r}
+
+results_df <- data.frame(random_seed = integer(), year = integer(), str = numeric(), viz = numeric(), comb = numeric(), str_viz = numeric())
+
+seeds <- 1:10
+
+for(seed in seeds){
+  set.seed(seed)
+for(year in 2008:2017){
+  structured_data <- read.csv(paste0("./output_validation_test/mds_structured_",year,".csv"),stringsAsFactors = FALSE)
+  visual_data <- read.csv(paste0("./output_validation_test/mds_visual_",year,".csv"),stringsAsFactors = FALSE) 
+  combination_data <- read.csv(paste0("./output_validation_test/mds_combination_",year,".csv"),stringsAsFactors = FALSE)
+  forum_data <- read.csv(paste0("./output_validation_test/mds_forum_",year,".csv"),stringsAsFactors = FALSE)
+
+  structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")]))[upper.tri(as.matrix(dist(structured_data[, c("x", "y")])))])
+  visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")]))[upper.tri(as.matrix(dist(visual_data[, c("x", "y")])))])
+  combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")]))[upper.tri(as.matrix(dist(combination_data[, c("x", "y")])))])
+  forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")]))[upper.tri(as.matrix(dist(forum_data[, c("x", "y")])))])
+  
+  df <- data.frame(structured_data = structured_data, visual_data = visual_data, combination_data = combination_data, forum_data = forum_data)
+  
+  trainIndex <- createDataPartition(df$forum_data, p = .8, list = FALSE, times = 1)
+
+  trainData <- df[ trainIndex,]
+  testData  <- df[-trainIndex,]
+  
+  model_structured <- randomForest(forum_data ~ structured_data, data=trainData)
+  model_visual <- randomForest(forum_data ~ visual_data, data=trainData)
+  model_combination <- randomForest(forum_data ~ combination_data, data=trainData)
+  model_structured_visual <- randomForest(forum_data ~ structured_data + visual_data, data=trainData)
+  
+  pred_structured <- predict(model_structured, testData)
+  pred_visual <- predict(model_visual, testData)
+  pred_combination <- predict(model_combination, testData)
+  pred_structured_visual <- predict(model_structured_visual, testData)
+  
+  mae_structured <- mean(abs(pred_structured - testData$forum_data))
+  mae_visual <- mean(abs(pred_visual - testData$forum_data))
+  mae_combination <- mean(abs(pred_combination - testData$forum_data))
+  mae_structured_visual <- mean(abs(pred_structured_visual - testData$forum_data))
+
+  results_df <- rbind(results_df, data.frame(random_seed = seed, year = year, str = mae_structured, viz = mae_visual, comb = mae_combination, str_viz = mae_structured_visual))
+
+
+}}
+
+results_df$method <- "mds"
+
+mds_results_df <- results_df
+
+results_df <- data.frame(random_seed = integer(), year = integer(), str = numeric(), viz = numeric(), comb = numeric(), str_viz = numeric())
+
+for(seed in seeds){
+  set.seed(seed)
+for(year in 2008:2017){
+  structured_data <- read.csv(paste0("./output_validation_test/tsne_structured_",year,".csv"),stringsAsFactors = FALSE)
+  visual_data <- read.csv(paste0("./output_validation_test/tsne_visual_",year,".csv"),stringsAsFactors = FALSE) 
+  combination_data <- read.csv(paste0("./output_validation_test/tsne_combination_",year,".csv"),stringsAsFactors = FALSE)
+  forum_data <- read.csv(paste0("./output_validation_test/tsne_forum_",year,".csv"),stringsAsFactors = FALSE)
+
+  structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")]))[upper.tri(as.matrix(dist(structured_data[, c("x", "y")])))])
+  visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")]))[upper.tri(as.matrix(dist(visual_data[, c("x", "y")])))])
+  combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")]))[upper.tri(as.matrix(dist(combination_data[, c("x", "y")])))])
+  forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")]))[upper.tri(as.matrix(dist(forum_data[, c("x", "y")])))])
+  
+  df <- data.frame(structured_data = structured_data, visual_data = visual_data, combination_data = combination_data, forum_data = forum_data)
+  
+  trainIndex <- createDataPartition(df$forum_data, p = .8, list = FALSE, times = 1)
+
+  trainData <- df[ trainIndex,]
+  testData  <- df[-trainIndex,]
+  
+  model_structured <- randomForest(forum_data ~ structured_data, data=trainData)
+  model_visual <- randomForest(forum_data ~ visual_data, data=trainData)
+  model_combination <- randomForest(forum_data ~ combination_data, data=trainData)
+  model_structured_visual <- randomForest(forum_data ~ structured_data + visual_data, data=trainData)
+  
+  pred_structured <- predict(model_structured, testData)
+  pred_visual <- predict(model_visual, testData)
+  pred_combination <- predict(model_combination, testData)
+  pred_structured_visual <- predict(model_structured_visual, testData)
+  
+  mae_structured <- mean(abs(pred_structured - testData$forum_data))
+  mae_visual <- mean(abs(pred_visual - testData$forum_data))
+  mae_combination <- mean(abs(pred_combination - testData$forum_data))
+  mae_structured_visual <- mean(abs(pred_structured_visual - testData$forum_data))
+
+results_df <- rbind(results_df, data.frame(random_seed = seed, year = year, str = mae_structured, viz = mae_visual, comb = mae_combination, str_viz = mae_structured_visual))
+
+}}
+
+results_df$method <- "tsne"
+
+tsne_results_df <- results_df
+
+regression_results_df <- rbind(mds_results_df, tsne_results_df)
+
+rm(df,mds_results_df,tsne_results_df,model_combination,model_structured,model_structured_visual,model_visual,results_df,testData,trainData,trainIndex)
+
+mean(regression_results_df$str[regression_results_df$method=="mds"])
+mean(regression_results_df$viz[regression_results_df$method=="mds"])
+mean(regression_results_df$comb[regression_results_df$method=="mds"])
+mean(regression_results_df$str_viz[regression_results_df$method=="mds"])
+
+mean(regression_results_df$str[regression_results_df$method=="tsne"])
+mean(regression_results_df$viz[regression_results_df$method=="tsne"])
+mean(regression_results_df$comb[regression_results_df$method=="tsne"])
+mean(regression_results_df$str_viz[regression_results_df$method=="tsne"])
+
+rf_regression_results_df <- regression_results_df
+
+```
+
+## OOS Results XGBoost
+
+```{r}
+
+results_df <- data.frame(random_seed = integer(), year = integer(), str = numeric(), viz = numeric(), comb = numeric(), str_viz = numeric())
+
+seeds <- 1:10
+
+for(seed in seeds){
+  set.seed(seed)
+for(year in 2008:2017){
+  structured_data <- read.csv(paste0("./output_validation_test/mds_structured_",year,".csv"),stringsAsFactors = FALSE)
+  visual_data <- read.csv(paste0("./output_validation_test/mds_visual_",year,".csv"),stringsAsFactors = FALSE) 
+  combination_data <- read.csv(paste0("./output_validation_test/mds_combination_",year,".csv"),stringsAsFactors = FALSE)
+  forum_data <- read.csv(paste0("./output_validation_test/mds_forum_",year,".csv"),stringsAsFactors = FALSE)
+
+  structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")]))[upper.tri(as.matrix(dist(structured_data[, c("x", "y")])))])
+  visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")]))[upper.tri(as.matrix(dist(visual_data[, c("x", "y")])))])
+  combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")]))[upper.tri(as.matrix(dist(combination_data[, c("x", "y")])))])
+  forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")]))[upper.tri(as.matrix(dist(forum_data[, c("x", "y")])))])
+  
+  df <- data.frame(structured_data = structured_data, visual_data = visual_data, combination_data = combination_data, forum_data = forum_data)
+  
+  trainIndex <- createDataPartition(df$forum_data, p = .8, list = FALSE, times = 1)
+
+  trainData <- df[ trainIndex,]
+  testData  <- df[-trainIndex,]
+  
+  dtrain <- xgb.DMatrix(data = as.matrix(trainData[, -4]), label = trainData$forum_data)
+  dtest <- xgb.DMatrix(data = as.matrix(testData[, -4]), label = testData$forum_data)
+  
+  params <- list(booster = "gbtree", objective = "reg:squarederror", eta = 0.3, max_depth = 6)
+  
+  model_structured <- xgb.train(params, dtrain, nrounds = 100, watchlist = list(train = dtrain, test = dtest), print_every_n = 10)
+  model_visual <- xgb.train(params, xgb.DMatrix(data = as.matrix(trainData[, c("visual_data")]), label = trainData$forum_data), nrounds = 100)
+  model_combination <- xgb.train(params, xgb.DMatrix(data = as.matrix(trainData[, c("combination_data")]), label = trainData$forum_data), nrounds = 100)
+  model_structured_visual <- xgb.train(params, xgb.DMatrix(data = as.matrix(trainData[, c("structured_data", "visual_data")]), label = trainData$forum_data), nrounds = 100)
+  
+  pred_structured <- predict(model_structured, dtest)
+  pred_visual <- predict(model_visual, as.matrix(testData[, c("visual_data")]))
+  pred_combination <- predict(model_combination, as.matrix(testData[, c("combination_data")]))
+  pred_structured_visual <- predict(model_structured_visual, as.matrix(testData[, c("structured_data", "visual_data")]))
+  
+  mae_structured <- mean(abs(pred_structured - testData$forum_data))
+  mae_visual <- mean(abs(pred_visual - testData$forum_data))
+  mae_combination <- mean(abs(pred_combination - testData$forum_data))
+  mae_structured_visual <- mean(abs(pred_structured_visual - testData$forum_data))
+
+results_df <- rbind(results_df, data.frame(random_seed = seed, year = year, str = mae_structured, viz = mae_visual, comb = mae_combination, str_viz = mae_structured_visual))
+
+}}
+
+results_df$method <- "mds"
+
+mds_results_df <- results_df
+
+results_df <- data.frame(random_seed = integer(), year = integer(), str = numeric(), viz = numeric(), comb = numeric(), str_viz = numeric())
+
+for(seed in seeds){
+  set.seed(seed)
+for(year in 2008:2017){
+  structured_data <- read.csv(paste0("./output_validation_test/tsne_structured_",year,".csv"),stringsAsFactors = FALSE)
+  visual_data <- read.csv(paste0("./output_validation_test/tsne_visual_",year,".csv"),stringsAsFactors = FALSE) 
+  combination_data <- read.csv(paste0("./output_validation_test/tsne_combination_",year,".csv"),stringsAsFactors = FALSE)
+  forum_data <- read.csv(paste0("./output_validation_test/tsne_forum_",year,".csv"),stringsAsFactors = FALSE)
+
+  structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")]))[upper.tri(as.matrix(dist(structured_data[, c("x", "y")])))])
+  visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")]))[upper.tri(as.matrix(dist(visual_data[, c("x", "y")])))])
+  combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")]))[upper.tri(as.matrix(dist(combination_data[, c("x", "y")])))])
+  forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")]))[upper.tri(as.matrix(dist(forum_data[, c("x", "y")])))])
+  
+  df <- data.frame(structured_data = structured_data, visual_data = visual_data, combination_data = combination_data, forum_data = forum_data)
+  
+  trainIndex <- createDataPartition(df$forum_data, p = .8, list = FALSE, times = 1)
+  
+  trainData <- df[ trainIndex,]
+  testData  <- df[-trainIndex,]
+  
+  dtrain <- xgb.DMatrix(data = as.matrix(trainData[, -4]), label = trainData$forum_data)
+  dtest <- xgb.DMatrix(data = as.matrix(testData[, -4]), label = testData$forum_data)
+  
+  params <- list(booster = "gbtree", objective = "reg:squarederror", eta = 0.3, max_depth = 6)
+  
+  model_structured <- xgb.train(params, dtrain, nrounds = 100, watchlist = list(train = dtrain, test = dtest), print_every_n = 10)
+  model_visual <- xgb.train(params, xgb.DMatrix(data = as.matrix(trainData[, c("visual_data")]), label = trainData$forum_data), nrounds = 100)
+  model_combination <- xgb.train(params, xgb.DMatrix(data = as.matrix(trainData[, c("combination_data")]), label = trainData$forum_data), nrounds = 100)
+  model_structured_visual <- xgb.train(params, xgb.DMatrix(data = as.matrix(trainData[, c("structured_data", "visual_data")]), label = trainData$forum_data), nrounds = 100)
+  
+  pred_structured <- predict(model_structured, dtest)
+  pred_visual <- predict(model_visual, as.matrix(testData[, c("visual_data")]))
+  pred_combination <- predict(model_combination, as.matrix(testData[, c("combination_data")]))
+  pred_structured_visual <- predict(model_structured_visual, as.matrix(testData[, c("structured_data", "visual_data")]))
+  
+  mae_structured <- mean(abs(pred_structured - testData$forum_data))
+  mae_visual <- mean(abs(pred_visual - testData$forum_data))
+  mae_combination <- mean(abs(pred_combination - testData$forum_data))
+  mae_structured_visual <- mean(abs(pred_structured_visual - testData$forum_data))
+
+results_df <- rbind(results_df, data.frame(random_seed = seed, year = year, str = mae_structured, viz = mae_visual, comb = mae_combination, str_viz = mae_structured_visual))
+
+}}
+
+results_df$method <- "tsne"
+
+tsne_results_df <- results_df
+
+regression_results_df <- rbind(mds_results_df, tsne_results_df)
+
+rm(df,mds_results_df,tsne_results_df,model_combination,model_structured,model_structured_visual,model_visual,results_df,testData,trainData,trainIndex)
+
+mean(regression_results_df$str[regression_results_df$method=="mds"])
+mean(regression_results_df$viz[regression_results_df$method=="mds"])
+mean(regression_results_df$comb[regression_results_df$method=="mds"])
+mean(regression_results_df$str_viz[regression_results_df$method=="mds"])
+
+mean(regression_results_df$str[regression_results_df$method=="tsne"])
+mean(regression_results_df$viz[regression_results_df$method=="tsne"])
+mean(regression_results_df$comb[regression_results_df$method=="tsne"])
+mean(regression_results_df$str_viz[regression_results_df$method=="tsne"])
+
+xg_regression_results_df <- regression_results_df
+
+```

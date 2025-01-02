@@ -1,0 +1,558 @@
+---
+title: "The Car Project - Netzer Validation Method"
+author: "Ankit Sisodia"
+date: "May 11, 2024"
+output: html_document
+---
+
+## Importing Libraries
+
+```{r}
+
+library(caret)
+library(cowplot)
+library(dplyr)
+library(data.table)
+library(fixest)
+library(foreign)
+library(geometry)
+library(ggplot2)
+library(ggalt)
+library(ggrepel)
+library(grid)
+library(jpeg)
+library(lpdensity)
+library(lubridate)
+library(magick)
+library(MASS)  # for the isotsne function
+library(purrr)
+library(rddensity)
+library(rdrobust)
+library(rdlocrand)
+library(readstata13)
+library(readxl)
+library(reshape)
+library(Rtsne)
+library(sp)
+library(sf)
+library(SnowballC)
+library(stargazer)
+require(tidyr)
+library(tm)
+library(xgboost)
+library(xtable)
+
+rm(list=ls())
+
+```
+
+## Regression Results
+
+```{r}
+
+results_df <- data.frame(year = integer(), str = numeric(), viz = numeric(), comb = numeric(), str_viz = numeric())
+
+for(year in 2008:2017){
+  structured_data <- read.csv(paste0("./input_validation_test/mds_structured_",year,".csv"),stringsAsFactors = FALSE)
+  structured_data$make <- tolower(structured_data$make)
+  structured_data <- structured_data %>% filter(make!="abarth" & make!="aixam" & make!="cadillac" & make!="ds" & make!="hummer" & make!="infiniti" & make!="maserati" & make!="perodua" & make!="ssangyong" & make!="mini" & make!="seat" & make!="smart")
+  structured_data <- structured_data %>% arrange(make)
+  structured_data <- structured_data %>% group_by(make) %>% summarise(x=mean(s_x),y=mean(s_y))
+    
+  visual_data <- read.csv(paste0("./input_validation_test/mds_visual_",year,".csv"),stringsAsFactors = FALSE) 
+  visual_data$make <- tolower(visual_data$make)
+  visual_data <- visual_data %>% filter(make!="abarth" & make!="aixam" & make!="cadillac" & make!="ds" & make!="hummer" & make!="infiniti" & make!="maserati" & make!="perodua" & make!="ssangyong" & make!="mini" & make!="seat" & make!="smart")
+  visual_data <- visual_data %>% arrange(make)
+  visual_data <- visual_data %>% group_by(make) %>% summarise(x=mean(v_x),y=mean(v_y))
+  
+  combination_data <- read.csv(paste0("./input_validation_test/mds_combination_",year,".csv"),stringsAsFactors = FALSE)
+  combination_data$make <- tolower(combination_data$make)
+  combination_data <- combination_data %>% filter(make!="abarth" & make!="aixam" & make!="cadillac" & make!="ds" & make!="hummer" & make!="infiniti" & make!="maserati" & make!="perodua" & make!="ssangyong" & make!="mini" & make!="seat" & make!="smart")
+  combination_data <- combination_data %>% arrange(make)
+  combination_data <- combination_data %>% group_by(make) %>% summarise(x=mean(m_x),y=mean(m_y))
+  
+  forum_data <- read.csv(paste0("./input_validation_test/mds_make_forum_",year,".csv"),stringsAsFactors = FALSE)
+  forum_data$make <- tolower(forum_data$make)
+  forum_data <- forum_data %>% filter(make!="abarth" & make!="aixam" & make!="cadillac" & make!="ds" & make!="hummer" & make!="infiniti" & make!="maserati" & make!="perodua" & make!="ssangyong" & make!="mini" & make!="seat" & make!="smart")
+  forum_data <- forum_data %>% arrange(make)
+  forum_data <- forum_data %>% group_by(make) %>% summarise(x=mean(f_x),y=mean(f_y))
+  forum_data <- merge(forum_data, structured_data %>% dplyr::select(make) %>% distinct())
+  
+  structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")]))[upper.tri(as.matrix(dist(structured_data[, c("x", "y")])))])
+  visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")]))[upper.tri(as.matrix(dist(visual_data[, c("x", "y")])))])
+  combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")]))[upper.tri(as.matrix(dist(combination_data[, c("x", "y")])))])
+  forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")]))[upper.tri(as.matrix(dist(forum_data[, c("x", "y")])))])
+  
+  # structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")])))
+  # visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")])))
+  # combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")])))
+  # forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")])))
+  
+  lm_str <- summary(lm(forum_data ~ structured_data))
+  lm_viz <- summary(lm(forum_data ~ visual_data))
+  lm_str_viz <- summary(lm(forum_data ~ structured_data + visual_data))
+  lm_comb <- summary(lm(forum_data ~ combination_data))
+  
+  print(lm_str)
+  print(lm_viz)
+  print(lm_str_viz)
+  print(lm_comb)
+  
+  r2_str <- lm_str$r.squared
+  r2_viz <- lm_viz$r.squared
+  r2_comb <- lm_comb$r.squared
+  r2_str_viz <- lm_str_viz$r.squared
+  
+  results_df <- rbind(results_df, data.frame(year = year, str = r2_str, viz = r2_viz, comb = r2_comb, str_viz = r2_str_viz))
+
+}
+
+results_df$method <- "mds"
+
+mds_results_df <- results_df
+
+results_df <- data.frame(year = integer(), str = numeric(), viz = numeric(), comb = numeric(), str_viz = numeric())
+
+for(year in 2008:2017){
+  structured_data <- read.csv(paste0("./input_validation_test/tsne_structured_",year,".csv"),stringsAsFactors = FALSE)
+  structured_data$make <- tolower(structured_data$make)
+  structured_data <- structured_data %>% filter(make!="abarth" & make!="aixam" & make!="cadillac" & make!="ds" & make!="hummer" & make!="infiniti" & make!="maserati" & make!="perodua" & make!="ssangyong" & make!="mini" & make!="seat" & make!="smart")
+  structured_data <- structured_data %>% arrange(make)
+  structured_data <- structured_data %>% group_by(make) %>% summarise(x=mean(s_x),y=mean(s_y))
+    
+  visual_data <- read.csv(paste0("./input_validation_test/tsne_visual_",year,".csv"),stringsAsFactors = FALSE) 
+  visual_data$make <- tolower(visual_data$make)
+  visual_data <- visual_data %>% filter(make!="abarth" & make!="aixam" & make!="cadillac" & make!="ds" & make!="hummer" & make!="infiniti" & make!="maserati" & make!="perodua" & make!="ssangyong" & make!="mini" & make!="seat" & make!="smart")
+  visual_data <- visual_data %>% arrange(make)
+  visual_data <- visual_data %>% group_by(make) %>% summarise(x=mean(v_x),y=mean(v_y))
+  
+  combination_data <- read.csv(paste0("./input_validation_test/tsne_combination_",year,".csv"),stringsAsFactors = FALSE)
+  combination_data$make <- tolower(combination_data$make)
+  combination_data <- combination_data %>% filter(make!="abarth" & make!="aixam" & make!="cadillac" & make!="ds" & make!="hummer" & make!="infiniti" & make!="maserati" & make!="perodua" & make!="ssangyong" & make!="mini" & make!="seat" & make!="smart")
+  combination_data <- combination_data %>% arrange(make)
+  combination_data <- combination_data %>% group_by(make) %>% summarise(x=mean(m_x),y=mean(m_y))
+  
+  forum_data <- read.csv(paste0("./input_validation_test/tsne_make_forum_",year,".csv"),stringsAsFactors = FALSE)
+  forum_data$make <- tolower(forum_data$make)
+  forum_data <- forum_data %>% filter(make!="abarth" & make!="aixam" & make!="cadillac" & make!="ds" & make!="hummer" & make!="infiniti" & make!="maserati" & make!="perodua" & make!="ssangyong" & make!="mini" & make!="seat" & make!="smart")
+  forum_data <- forum_data %>% arrange(make)
+  forum_data <- forum_data %>% group_by(make) %>% summarise(x=mean(f_x),y=mean(f_y))
+  forum_data <- merge(forum_data, structured_data %>% dplyr::select(make) %>% distinct())
+  
+  structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")]))[upper.tri(as.matrix(dist(structured_data[, c("x", "y")])))])
+  visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")]))[upper.tri(as.matrix(dist(visual_data[, c("x", "y")])))])
+  combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")]))[upper.tri(as.matrix(dist(combination_data[, c("x", "y")])))])
+  forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")]))[upper.tri(as.matrix(dist(forum_data[, c("x", "y")])))])
+  
+  # structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")])))
+  # visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")])))
+  # combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")])))
+  # forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")])))
+  
+  lm_str <- summary(lm(forum_data ~ structured_data))
+  lm_viz <- summary(lm(forum_data ~ visual_data))
+  lm_str_viz <- summary(lm(forum_data ~ structured_data + visual_data))
+  lm_comb <- summary(lm(forum_data ~ combination_data))
+
+  print(lm_str)
+  print(lm_viz)
+  print(lm_str_viz)
+  print(lm_comb)
+
+  r2_str <- lm_str$r.squared
+  r2_viz <- lm_viz$r.squared
+  r2_comb <- lm_comb$r.squared
+  r2_str_viz <- lm_str_viz$r.squared
+  
+  results_df <- rbind(results_df, data.frame(year = year, str = r2_str, viz = r2_viz, comb = r2_comb, str_viz = r2_str_viz))
+
+}
+
+results_df$method <- "tsne"
+
+tsne_results_df <- results_df
+
+regression_results_df <- rbind(mds_results_df, tsne_results_df)
+
+rm(lm_comb,lm_str,lm_str_viz,lm_viz)
+rm(results_df, mds_results_df, tsne_results_df)
+
+mean(regression_results_df$str[regression_results_df$method=="mds"])
+mean(regression_results_df$viz[regression_results_df$method=="mds"])
+mean(regression_results_df$comb[regression_results_df$method=="mds"])
+mean(regression_results_df$str_viz[regression_results_df$method=="mds"])
+
+mean(regression_results_df$str[regression_results_df$method=="tsne"])
+mean(regression_results_df$viz[regression_results_df$method=="tsne"])
+mean(regression_results_df$comb[regression_results_df$method=="tsne"])
+mean(regression_results_df$str_viz[regression_results_df$method=="tsne"])
+
+```
+
+## Correlation Results
+
+```{r}
+
+results_df <- data.frame(year = integer(), str = numeric(), viz = numeric(), comb = numeric())
+
+for(year in 2008:2017){
+  structured_data <- read.csv(paste0("./input_validation_test/mds_structured_",year,".csv"),stringsAsFactors = FALSE)
+  structured_data$make <- tolower(structured_data$make)
+  structured_data <- structured_data %>% arrange(make)
+  structured_data <- structured_data %>% group_by(make) %>% summarise(x=mean(s_x),y=mean(s_y))
+    
+  visual_data <- read.csv(paste0("./input_validation_test/mds_visual_",year,".csv"),stringsAsFactors = FALSE) 
+  visual_data$make <- tolower(visual_data$make)
+  visual_data <- visual_data %>% arrange(make)
+  visual_data <- visual_data %>% group_by(make) %>% summarise(x=mean(v_x),y=mean(v_y))
+  
+  combination_data <- read.csv(paste0("./input_validation_test/mds_combination_",year,".csv"),stringsAsFactors = FALSE)
+  combination_data$make <- tolower(combination_data$make)
+  combination_data <- combination_data %>% arrange(make)
+  combination_data <- combination_data %>% group_by(make) %>% summarise(x=mean(m_x),y=mean(m_y))
+  
+  forum_data <- read.csv(paste0("./input_validation_test/mds_make_forum_",year,".csv"),stringsAsFactors = FALSE)
+  forum_data$make <- tolower(forum_data$make)
+  forum_data <- forum_data %>% arrange(make)
+  forum_data <- forum_data %>% group_by(make) %>% summarise(x=mean(f_x),y=mean(f_y))
+  forum_data <- merge(forum_data, structured_data %>% dplyr::select(make) %>% distinct())
+  
+  structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")]))[upper.tri(as.matrix(dist(structured_data[, c("x", "y")])))])
+  visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")]))[upper.tri(as.matrix(dist(visual_data[, c("x", "y")])))])
+  combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")]))[upper.tri(as.matrix(dist(combination_data[, c("x", "y")])))])
+  forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")]))[upper.tri(as.matrix(dist(forum_data[, c("x", "y")])))])
+  
+  # structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")])))
+  # visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")])))
+  # combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")])))
+  # forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")])))
+  
+  cor_forum_structured <- cor(forum_data, structured_data)
+  cor_forum_visual <- cor(forum_data, visual_data)
+  cor_forum_combination <- cor(forum_data, combination_data)
+  
+  results_df <- rbind(results_df, data.frame(year = year, str = cor_forum_structured, viz = cor_forum_visual, comb = cor_forum_combination))
+
+}
+
+results_df$method <- "mds"
+
+mds_results_df <- results_df
+
+results_df <- data.frame(year = integer(), str = numeric(), viz = numeric(), comb = numeric())
+
+for(year in 2008:2017){
+  structured_data <- read.csv(paste0("./input_validation_test/tsne_structured_",year,".csv"),stringsAsFactors = FALSE)
+  structured_data$make <- tolower(structured_data$make)
+  structured_data <- structured_data %>% arrange(make)
+  structured_data <- structured_data %>% group_by(make) %>% summarise(x=mean(s_x),y=mean(s_y))
+    
+  visual_data <- read.csv(paste0("./input_validation_test/tsne_visual_",year,".csv"),stringsAsFactors = FALSE) 
+  visual_data$make <- tolower(visual_data$make)
+  visual_data <- visual_data %>% arrange(make)
+  visual_data <- visual_data %>% group_by(make) %>% summarise(x=mean(v_x),y=mean(v_y))
+  
+  combination_data <- read.csv(paste0("./input_validation_test/tsne_combination_",year,".csv"),stringsAsFactors = FALSE)
+  combination_data$make <- tolower(combination_data$make)
+  combination_data <- combination_data %>% arrange(make)
+  combination_data <- combination_data %>% group_by(make) %>% summarise(x=mean(m_x),y=mean(m_y))
+  
+  forum_data <- read.csv(paste0("./input_validation_test/tsne_make_forum_",year,".csv"),stringsAsFactors = FALSE)
+  forum_data$make <- tolower(forum_data$make)
+  forum_data <- forum_data %>% arrange(make)
+  forum_data <- forum_data %>% group_by(make) %>% summarise(x=mean(f_x),y=mean(f_y))
+  forum_data <- merge(forum_data, structured_data %>% dplyr::select(make) %>% distinct())
+  
+  structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")]))[upper.tri(as.matrix(dist(structured_data[, c("x", "y")])))])
+  visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")]))[upper.tri(as.matrix(dist(visual_data[, c("x", "y")])))])
+  combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")]))[upper.tri(as.matrix(dist(combination_data[, c("x", "y")])))])
+  forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")]))[upper.tri(as.matrix(dist(forum_data[, c("x", "y")])))])
+  
+  # structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")])))
+  # visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")])))
+  # combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")])))
+  # forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")])))
+  
+  cor_forum_structured <- cor(forum_data, structured_data)
+  cor_forum_visual <- cor(forum_data, visual_data)
+  cor_forum_combination <- cor(forum_data, combination_data)
+  
+  results_df <- rbind(results_df, data.frame(year = year, str = cor_forum_structured, viz = cor_forum_visual, comb = cor_forum_combination))
+
+}
+
+results_df$method <- "tsne"
+
+tsne_results_df <- results_df
+
+correlation_results_df <- rbind(mds_results_df, tsne_results_df)
+
+rm(cor_forum_structured,cor_forum_visual,cor_forum_combination)
+rm(results_df, mds_results_df, tsne_results_df)
+
+mean(correlation_results_df$str[correlation_results_df$method=="mds"])
+mean(correlation_results_df$viz[correlation_results_df$method=="mds"])
+mean(correlation_results_df$comb[correlation_results_df$method=="mds"])
+
+mean(correlation_results_df$str[correlation_results_df$method=="tsne"])
+mean(correlation_results_df$viz[correlation_results_df$method=="tsne"])
+mean(correlation_results_df$comb[correlation_results_df$method=="tsne"])
+
+
+mean(abs(correlation_results_df$str[correlation_results_df$method=="mds"]))
+mean(abs(correlation_results_df$viz[correlation_results_df$method=="mds"]))
+mean(abs(correlation_results_df$comb[correlation_results_df$method=="mds"]))
+
+mean(abs(correlation_results_df$str[correlation_results_df$method=="tsne"]))
+mean(abs(correlation_results_df$viz[correlation_results_df$method=="tsne"]))
+mean(abs(correlation_results_df$comb[correlation_results_df$method=="tsne"]))
+
+```
+
+
+
+
+## Regression Results
+
+```{r}
+
+results_df <- data.frame(year = integer(), str = numeric(), viz = numeric(), comb = numeric(), str_viz = numeric())
+
+for(year in 2008:2017){
+  structured_data <- read.csv(paste0("./input_validation_test/mds_structured_",year,".csv"),stringsAsFactors = FALSE)
+  structured_data$make <- tolower(structured_data$make)
+  structured_data <- structured_data %>% arrange(make)
+  structured_data <- structured_data %>% group_by(make) %>% summarise(x=mean(s_x*shares),y=mean(s_y*shares))
+    
+  visual_data <- read.csv(paste0("./input_validation_test/mds_visual_",year,".csv"),stringsAsFactors = FALSE) 
+  visual_data$make <- tolower(visual_data$make)
+  visual_data <- visual_data %>% arrange(make)
+  visual_data <- visual_data %>% group_by(make) %>% summarise(x=mean(v_x*shares),y=mean(v_y*shares))
+  
+  combination_data <- read.csv(paste0("./input_validation_test/mds_combination_",year,".csv"),stringsAsFactors = FALSE)
+  combination_data$make <- tolower(combination_data$make)
+  combination_data <- combination_data %>% arrange(make)
+  combination_data <- combination_data %>% group_by(make) %>% summarise(x=mean(m_x*shares),y=mean(m_y*shares))
+  
+  forum_data <- read.csv(paste0("./input_validation_test/mds_make_forum_",year,".csv"),stringsAsFactors = FALSE)
+  forum_data$make <- tolower(forum_data$make)
+  forum_data <- forum_data %>% arrange(make)
+  forum_data <- forum_data %>% group_by(make) %>% summarise(x=mean(f_x),y=mean(f_y))
+  forum_data <- merge(forum_data, structured_data %>% dplyr::select(make) %>% distinct())
+  
+  structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")]))[upper.tri(as.matrix(dist(structured_data[, c("x", "y")])))])
+  visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")]))[upper.tri(as.matrix(dist(visual_data[, c("x", "y")])))])
+  combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")]))[upper.tri(as.matrix(dist(combination_data[, c("x", "y")])))])
+  forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")]))[upper.tri(as.matrix(dist(forum_data[, c("x", "y")])))])
+  
+  # structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")])))
+  # visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")])))
+  # combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")])))
+  # forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")])))
+  
+  lm_str <- summary(lm(forum_data ~ structured_data))
+  lm_viz <- summary(lm(forum_data ~ visual_data))
+  lm_str_viz <- summary(lm(forum_data ~ structured_data + visual_data))
+  lm_comb <- summary(lm(forum_data ~ combination_data))
+  
+  r2_str <- lm_str$r.squared
+  r2_viz <- lm_viz$r.squared
+  r2_comb <- lm_comb$r.squared
+  r2_str_viz <- lm_str_viz$r.squared
+  
+  results_df <- rbind(results_df, data.frame(year = year, str = r2_str, viz = r2_viz, comb = r2_comb, str_viz = r2_str_viz))
+
+}
+
+results_df$method <- "mds"
+
+mds_results_df <- results_df
+
+results_df <- data.frame(year = integer(), str = numeric(), viz = numeric(), comb = numeric(), str_viz = numeric())
+
+for(year in 2008:2017){
+  structured_data <- read.csv(paste0("./input_validation_test/tsne_structured_",year,".csv"),stringsAsFactors = FALSE)
+  structured_data$make <- tolower(structured_data$make)
+  structured_data <- structured_data %>% arrange(make)
+  structured_data <- structured_data %>% group_by(make) %>% summarise(x=mean(s_x*shares),y=mean(s_y*shares))
+    
+  visual_data <- read.csv(paste0("./input_validation_test/tsne_visual_",year,".csv"),stringsAsFactors = FALSE) 
+  visual_data$make <- tolower(visual_data$make)
+  visual_data <- visual_data %>% arrange(make)
+  visual_data <- visual_data %>% group_by(make) %>% summarise(x=mean(v_x*shares),y=mean(v_y*shares))
+  
+  combination_data <- read.csv(paste0("./input_validation_test/tsne_combination_",year,".csv"),stringsAsFactors = FALSE)
+  combination_data$make <- tolower(combination_data$make)
+  combination_data <- combination_data %>% arrange(make)
+  combination_data <- combination_data %>% group_by(make) %>% summarise(x=mean(m_x*shares),y=mean(m_y*shares))
+  
+  forum_data <- read.csv(paste0("./input_validation_test/tsne_make_forum_",year,".csv"),stringsAsFactors = FALSE)
+  forum_data$make <- tolower(forum_data$make)
+  forum_data <- forum_data %>% arrange(make)
+  forum_data <- forum_data %>% group_by(make) %>% summarise(x=mean(f_x),y=mean(f_y))
+  forum_data <- merge(forum_data, structured_data %>% dplyr::select(make) %>% distinct())
+  
+  structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")]))[upper.tri(as.matrix(dist(structured_data[, c("x", "y")])))])
+  visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")]))[upper.tri(as.matrix(dist(visual_data[, c("x", "y")])))])
+  combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")]))[upper.tri(as.matrix(dist(combination_data[, c("x", "y")])))])
+  forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")]))[upper.tri(as.matrix(dist(forum_data[, c("x", "y")])))])
+  
+  # structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")])))
+  # visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")])))
+  # combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")])))
+  # forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")])))
+  
+  lm_str <- summary(lm(forum_data ~ structured_data))
+  lm_viz <- summary(lm(forum_data ~ visual_data))
+  lm_str_viz <- summary(lm(forum_data ~ structured_data + visual_data))
+  lm_comb <- summary(lm(forum_data ~ combination_data))
+  
+  r2_str <- lm_str$r.squared
+  r2_viz <- lm_viz$r.squared
+  r2_comb <- lm_comb$r.squared
+  r2_str_viz <- lm_str_viz$r.squared
+  
+  results_df <- rbind(results_df, data.frame(year = year, str = r2_str, viz = r2_viz, comb = r2_comb, str_viz = r2_str_viz))
+
+}
+
+results_df$method <- "tsne"
+
+tsne_results_df <- results_df
+
+regression_results_df <- rbind(mds_results_df, tsne_results_df)
+
+rm(lm_comb,lm_str,lm_str_viz,lm_viz)
+rm(results_df, mds_results_df, tsne_results_df)
+
+mean(regression_results_df$str[regression_results_df$method=="mds"])
+mean(regression_results_df$viz[regression_results_df$method=="mds"])
+mean(regression_results_df$comb[regression_results_df$method=="mds"])
+mean(regression_results_df$str_viz[regression_results_df$method=="mds"])
+
+mean(regression_results_df$str[regression_results_df$method=="tsne"])
+mean(regression_results_df$viz[regression_results_df$method=="tsne"])
+mean(regression_results_df$comb[regression_results_df$method=="tsne"])
+mean(regression_results_df$str_viz[regression_results_df$method=="tsne"])
+
+```
+
+## Correlation Results
+
+```{r}
+
+results_df <- data.frame(year = integer(), str = numeric(), viz = numeric(), comb = numeric())
+
+for(year in 2008:2017){
+  structured_data <- read.csv(paste0("./input_validation_test/mds_structured_",year,".csv"),stringsAsFactors = FALSE)
+  structured_data$make <- tolower(structured_data$make)
+  structured_data <- structured_data %>% arrange(make)
+  structured_data <- structured_data %>% group_by(make) %>% summarise(x=mean(s_x*shares),y=mean(s_y*shares))
+    
+  visual_data <- read.csv(paste0("./input_validation_test/mds_visual_",year,".csv"),stringsAsFactors = FALSE) 
+  visual_data$make <- tolower(visual_data$make)
+  visual_data <- visual_data %>% arrange(make)
+  visual_data <- visual_data %>% group_by(make) %>% summarise(x=mean(v_x*shares),y=mean(v_y*shares))
+  
+  combination_data <- read.csv(paste0("./input_validation_test/mds_combination_",year,".csv"),stringsAsFactors = FALSE)
+  combination_data$make <- tolower(combination_data$make)
+  combination_data <- combination_data %>% arrange(make)
+  combination_data <- combination_data %>% group_by(make) %>% summarise(x=mean(m_x*shares),y=mean(m_y*shares))
+  
+  forum_data <- read.csv(paste0("./input_validation_test/mds_make_forum_",year,".csv"),stringsAsFactors = FALSE)
+  forum_data$make <- tolower(forum_data$make)
+  forum_data <- forum_data %>% arrange(make)
+  forum_data <- forum_data %>% group_by(make) %>% summarise(x=mean(f_x),y=mean(f_y))
+  forum_data <- merge(forum_data, structured_data %>% dplyr::select(make) %>% distinct())
+  
+  structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")]))[upper.tri(as.matrix(dist(structured_data[, c("x", "y")])))])
+  visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")]))[upper.tri(as.matrix(dist(visual_data[, c("x", "y")])))])
+  combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")]))[upper.tri(as.matrix(dist(combination_data[, c("x", "y")])))])
+  forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")]))[upper.tri(as.matrix(dist(forum_data[, c("x", "y")])))])
+  
+  # structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")])))
+  # visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")])))
+  # combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")])))
+  # forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")])))
+  
+  cor_forum_structured <- cor(forum_data, structured_data)
+  cor_forum_visual <- cor(forum_data, visual_data)
+  cor_forum_combination <- cor(forum_data, combination_data)
+  
+  results_df <- rbind(results_df, data.frame(year = year, str = cor_forum_structured, viz = cor_forum_visual, comb = cor_forum_combination))
+
+}
+
+results_df$method <- "mds"
+
+mds_results_df <- results_df
+
+results_df <- data.frame(year = integer(), str = numeric(), viz = numeric(), comb = numeric())
+
+for(year in 2008:2017){
+  structured_data <- read.csv(paste0("./input_validation_test/tsne_structured_",year,".csv"),stringsAsFactors = FALSE)
+  structured_data$make <- tolower(structured_data$make)
+  structured_data <- structured_data %>% arrange(make)
+  structured_data <- structured_data %>% group_by(make) %>% summarise(x=mean(s_x*shares),y=mean(s_y*shares))
+    
+  visual_data <- read.csv(paste0("./input_validation_test/tsne_visual_",year,".csv"),stringsAsFactors = FALSE) 
+  visual_data$make <- tolower(visual_data$make)
+  visual_data <- visual_data %>% arrange(make)
+  visual_data <- visual_data %>% group_by(make) %>% summarise(x=mean(v_x*shares),y=mean(v_y*shares))
+  
+  combination_data <- read.csv(paste0("./input_validation_test/tsne_combination_",year,".csv"),stringsAsFactors = FALSE)
+  combination_data$make <- tolower(combination_data$make)
+  combination_data <- combination_data %>% arrange(make)
+  combination_data <- combination_data %>% group_by(make) %>% summarise(x=mean(m_x*shares),y=mean(m_y*shares))
+  
+  forum_data <- read.csv(paste0("./input_validation_test/tsne_make_forum_",year,".csv"),stringsAsFactors = FALSE)
+  forum_data$make <- tolower(forum_data$make)
+  forum_data <- forum_data %>% arrange(make)
+  forum_data <- forum_data %>% group_by(make) %>% summarise(x=mean(f_x),y=mean(f_y))
+  forum_data <- merge(forum_data, structured_data %>% dplyr::select(make) %>% distinct())
+  
+  structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")]))[upper.tri(as.matrix(dist(structured_data[, c("x", "y")])))])
+  visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")]))[upper.tri(as.matrix(dist(visual_data[, c("x", "y")])))])
+  combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")]))[upper.tri(as.matrix(dist(combination_data[, c("x", "y")])))])
+  forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")]))[upper.tri(as.matrix(dist(forum_data[, c("x", "y")])))])
+  
+  # structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")])))
+  # visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")])))
+  # combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")])))
+  # forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")])))
+  
+  cor_forum_structured <- cor(forum_data, structured_data)
+  cor_forum_visual <- cor(forum_data, visual_data)
+  cor_forum_combination <- cor(forum_data, combination_data)
+  
+  results_df <- rbind(results_df, data.frame(year = year, str = cor_forum_structured, viz = cor_forum_visual, comb = cor_forum_combination))
+
+}
+
+results_df$method <- "tsne"
+
+tsne_results_df <- results_df
+
+correlation_results_df <- rbind(mds_results_df, tsne_results_df)
+
+rm(cor_forum_structured,cor_forum_visual,cor_forum_combination)
+rm(results_df, mds_results_df, tsne_results_df)
+
+mean(correlation_results_df$str[correlation_results_df$method=="mds"])
+mean(correlation_results_df$viz[correlation_results_df$method=="mds"])
+mean(correlation_results_df$comb[correlation_results_df$method=="mds"])
+
+mean(correlation_results_df$str[correlation_results_df$method=="tsne"])
+mean(correlation_results_df$viz[correlation_results_df$method=="tsne"])
+mean(correlation_results_df$comb[correlation_results_df$method=="tsne"])
+
+
+mean(abs(correlation_results_df$str[correlation_results_df$method=="mds"]))
+mean(abs(correlation_results_df$viz[correlation_results_df$method=="mds"]))
+mean(abs(correlation_results_df$comb[correlation_results_df$method=="mds"]))
+
+mean(abs(correlation_results_df$str[correlation_results_df$method=="tsne"]))
+mean(abs(correlation_results_df$viz[correlation_results_df$method=="tsne"]))
+mean(abs(correlation_results_df$comb[correlation_results_df$method=="tsne"]))
+
+```
