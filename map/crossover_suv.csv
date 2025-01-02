@@ -1,0 +1,97 @@
+﻿make_model,is_crossover,platform_segment,class
+Chevrolet Captiva,1,C,Compact crossover SUV
+Chevrolet Trax,1,C,Compact crossover SUV
+Citroen C-Crosser,1,C,Compact crossover SUV
+Dacia Duster,1,C,Compact crossover SUV
+Ford Kuga,1,C,Compact crossover SUV
+Honda CR-V,1,C,Compact crossover SUV
+Hyundai ix35,1,C,Compact crossover SUV
+Hyundai Tucson,1,C,Compact crossover SUV
+Jeep Compass,1,C,Compact crossover SUV
+Jeep Patriot,1,C,Compact crossover SUV
+Kia Niro,1,C,Compact crossover SUV
+Kia Sportage,1,C,Compact crossover SUV
+Land Rover Freelander,1,C,Compact crossover SUV
+Mazda CX-5,1,C,Compact crossover SUV
+MG GS,1,C,Compact crossover SUV
+Mitsubishi Outlander,1,C,Compact crossover SUV
+Nissan Qashqai,1,C,Compact crossover SUV
+Nissan X-Trail,1,C,Compact crossover SUV
+Peugeot 3008,1,C,Compact crossover SUV
+Peugeot 4007,1,C,Compact crossover SUV
+Renault Kadjar,1,C,Compact crossover SUV
+Renault Koleos,1,C,Compact crossover SUV
+SEAT Ateca,1,C,Compact crossover SUV
+SKODA Yeti,1,C,Compact crossover SUV
+Ssangyong Korando,1,C,Compact crossover SUV
+Subaru Forester,1,C,Compact crossover SUV
+Subaru XV,1,C,Compact crossover SUV
+Toyota RAV4,1,C,Compact crossover SUV
+Vauxhall Antara,1,C,Compact crossover SUV
+Volkswagen Tiguan,1,C,Compact crossover SUV
+Audi Q5,1,C,Compact luxury crossover SUV
+Audi SQ5,1,C,Compact luxury crossover SUV
+BMW X3,1,C,Compact luxury crossover SUV
+BMW X4,1,C,Compact luxury crossover SUV
+Lexus NX,1,C,Compact luxury crossover SUV
+Mercedes-Benz GLC Class,1,C,Compact luxury crossover SUV
+Porsche Macan,1,C,Compact luxury crossover SUV
+Volvo XC60,1,C,Compact luxury crossover SUV
+Dodge Nitro,0,J,Compact SUV
+Jeep Cherokee,0,J,Compact SUV
+Suzuki Grand Vitara,0,J,Compact SUV
+Suzuki Vitara,0,J,Compact SUV
+Bentley Bentayga,1,F,Full-size luxury crossover SUV
+Mercedes-Benz GL Class,1,F,Full-size luxury crossover SUV
+Mercedes-Benz GLS Class,1,F,Full-size luxury crossover SUV
+Nissan Patrol,0,J,Full-size SUV
+Toyota Land Cruiser,0,J,Full-size SUV
+Mercedes-Benz G Class,0,J,Luxury SUV
+Dodge Journey,1,D,Mid-size crossover SUV
+Ford Edge,1,D,Mid-size crossover SUV
+Hyundai Santa Fe,1,D,Mid-size crossover SUV
+Infiniti FX,1,D,Mid-size crossover SUV
+Infiniti QX70,1,D,Mid-size crossover SUV
+Jeep Grand Cherokee,1,D,Mid-size crossover SUV
+Kia Sorento,1,D,Mid-size crossover SUV
+Mazda CX-7,1,D,Mid-size crossover SUV
+Nissan Murano,1,D,Mid-size crossover SUV
+Nissan Pathfinder,1,D,Mid-size crossover SUV
+Audi Q7,1,E,Mid-size luxury crossover SUV
+Audi SQ7,1,E,Mid-size luxury crossover SUV
+BMW X5,1,E,Mid-size luxury crossover SUV
+BMW X6,1,E,Mid-size luxury crossover SUV
+Jaguar F-PACE,1,E,Mid-size luxury crossover SUV
+Lexus RX,1,E,Mid-size luxury crossover SUV
+Maserati Levante,1,E,Mid-size luxury crossover SUV
+Mercedes-Benz GLE Class,1,E,Mid-size luxury crossover SUV
+Mercedes-Benz M Class,1,E,Mid-size luxury crossover SUV
+Porsche Cayenne,1,E,Mid-size luxury crossover SUV
+Volkswagen Touareg,1,E,Mid-size luxury crossover SUV
+Volvo XC90,1,E,Mid-size luxury crossover SUV
+Jeep Commander,0,J,Mid-size SUV
+Jeep Wrangler,0,J,Mid-size SUV
+Mitsubishi Shogun,0,J,Mid-size SUV
+Ssangyong Rexton,0,J,Mid-size SUV
+Daihatsu Terios,0,J,Mini SUV
+Suzuki Jimny,0,J,Mini SUV
+Fiat Sedici,1,B,Subcompact crossover SUV
+Ford EcoSport,1,B,Subcompact crossover SUV
+Honda HR-V,1,B,Subcompact crossover SUV
+Jeep Renegade,1,B,Subcompact crossover SUV
+Kia Soul,1,B,Subcompact crossover SUV
+Mazda CX-3,1,B,Subcompact crossover SUV
+MINI Countryman,1,B,Subcompact crossover SUV
+MINI Paceman,1,B,Subcompact crossover SUV
+Mitsubishi ASX,1,B,Subcompact crossover SUV
+Nissan Juke,1,B,Subcompact crossover SUV
+Peugeot 2008,1,B,Subcompact crossover SUV
+Renault Captur,1,B,Subcompact crossover SUV
+Ssangyong Tivoli,1,B,Subcompact crossover SUV
+Toyota C-HR,1,B,Subcompact crossover SUV
+Vauxhall Mokka,1,B,Subcompact crossover SUV
+Audi Q2,1,B,Subcompact luxury crossover SUV
+Audi Q3,1,B,Subcompact luxury crossover SUV
+BMW X1,1,B,Subcompact luxury crossover SUV
+Infiniti QX30,1,B,Subcompact luxury crossover SUV
+Mercedes-Benz GLA Class,1,B,Subcompact luxury crossover SUV

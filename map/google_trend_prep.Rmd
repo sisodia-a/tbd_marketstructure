@@ -1,0 +1,254 @@
+---
+title: "Google Trend - Validation"
+author: "Ankit Sisodia"
+date: "Sep 30, 2024"
+output: html_document
+---
+
+## Importing Libraries
+
+```{r}
+
+library(tidyr)
+library(dplyr)
+
+rm(list=ls())
+
+```
+
+## Basic Validation
+
+```{r}
+
+## Input MDS Data From Paper
+sales_data <- read.csv('exp_uk_product_data.csv', stringsAsFactors=FALSE) %>% group_by(make,market_ids) %>% summarise(quantity=sum(quantity))
+sales_data <- sales_data %>% filter(make!="DS" & make!="MG" & make!="MINI" & make!="SEAT" & make!="Smart")
+
+googletrend_make <- read.csv('./googletrends_validation/googletrend-make.csv', header=TRUE)
+names(googletrend_make)[4] <- "Alfa Romeo"
+names(googletrend_make)[5] <- "Aston Martin"
+names(googletrend_make)[25] <- "Land Rover"
+names(googletrend_make)[29] <- "Mercedes-Benz"
+
+googletrend_long <- pivot_longer(googletrend_make,cols = -market_ids,names_to = "make",values_to = "googlescore")
+
+# rank_data <- googletrend_long %>% inner_join(sales_data, by = c("make", "market_ids"))
+rank_data <- merge(googletrend_long,sales_data,by = c("make", "market_ids"),all.x = TRUE,all.y = TRUE)
+rank_data <- rank_data %>% filter(!is.na(quantity))
+
+rank_data <- rank_data %>% group_by(market_ids) %>% mutate(rank_googlescore = rank(-googlescore),rank_quantity = rank(-quantity)) %>% ungroup()
+
+correlation_data <- rank_data %>% group_by(market_ids) %>% summarise(spearman_corr = cor(rank_googlescore, rank_quantity, method = "spearman"))
+
+print(correlation_data)
+
+```
+
+
+## Reading files
+
+```{r}
+
+df1 <- read.csv('./googletrends_validation/google_trend_data.csv', header=TRUE)
+df1 <- df1 %>% filter(Year=="2008" | Year=="2009" | Year=="2010" | Year=="2011" | Year=="2012" | Year=="2013" | Year=="2014" | Year=="2015" | Year=="2016" | Year=="2017")
+
+# Step 1: Reshape the data from wide to long format
+long_df <- df1 %>% pivot_longer(cols = -Year, names_to = "MakePair", values_to = "Similarity") %>% separate(MakePair, into = c("Make1", "Make2"), sep = "\\.")
+
+long_df$Make1[long_df$Make1=="AlfaRomeo"] <- "Alfa Romeo"
+long_df$Make2[long_df$Make2=="AlfaRomeo"] <- "Alfa Romeo"
+long_df$Make1[long_df$Make1=="AstonMartin"] <- "Aston Martin"
+long_df$Make2[long_df$Make2=="AstonMartin"] <- "Aston Martin"
+long_df$Make1[long_df$Make1=="LandRover"] <- "Land Rover"
+long_df$Make2[long_df$Make2=="LandRover"] <- "Land Rover"
+long_df$Make1[long_df$Make1=="MercedesBenz"] <- "Mercedes-Benz"
+long_df$Make2[long_df$Make2=="MercedesBenz"] <- "Mercedes-Benz"
+
+# Step 2: Extract all unique makes
+makes <- sort(unique(c(long_df$Make1, long_df$Make2)))
+
+# Ensure that Make1 and Make2 are factors with all possible makes as levels
+long_df$Make1 <- factor(long_df$Make1, levels = makes)
+long_df$Make2 <- factor(long_df$Make2, levels = makes)
+
+# Step 3: Create a list to store matrices for each year
+year_matrices <- list()
+
+# Get the list of unique years
+years <- unique(long_df$Year)
+
+# Step 1: Duplicate the rows with Make1 and Make2 swapped
+flipped_df <- long_df %>% mutate(Make1_flipped = Make2, Make2_flipped = Make1) %>% select(Year, Make1_flipped, Make2_flipped, Similarity) %>% rename(Make1 = Make1_flipped, Make2 = Make2_flipped)
+
+# Step 2: Combine original long_df with the flipped_df
+symmetrical_long_df <- bind_rows(long_df, flipped_df)
+
+# Step 3: Remove duplicate entries while keeping the maximum similarity value where applicable
+symmetrical_long_df <- symmetrical_long_df %>% group_by(Year, Make1, Make2) %>% summarise(Similarity = max(Similarity), .groups = 'drop')
+
+# Step 4: Create a list to store symmetrical matrices for each year
+year_matrices <- list()
+
+# Loop over each year to create the matrices
+for (yr in unique(symmetrical_long_df$Year)) {
+  # Subset data for the current year
+  df_year <- filter(symmetrical_long_df, Year == yr)
+  
+  # Create the similarity matrix for the current year
+  sim_matrix <- xtabs(Similarity ~ Make1 + Make2, data = df_year)
+  
+  # Store the matrix in the list with the year as the name
+  year_matrices[[as.character(yr)]] <- sim_matrix
+}
+
+# Save the symmetrical matrices to CSV files
+for (yr in names(year_matrices)) {
+  matrix_file_name <- paste0("./googletrends_validation/symmetrical_similarity_matrix_", yr, ".csv")
+  coordinate_file_name <- paste0("./googletrends_validation/mds_googletrends_",yr,".csv")
+  mds_result <- cmdscale(year_matrices[[yr]], k = 2)
+  mds_df <- data.frame(Make = rownames(year_matrices[[yr]]),X = mds_result[, 1],Y = mds_result[, 2])
+  write.csv(mds_df, coordinate_file_name, row.names = FALSE)
+  write.csv(year_matrices[[yr]], file = matrix_file_name, row.names = TRUE)
+}
+
+# make_combinations <- expand.grid(Make1 = makes, Make2 = makes)
+# our_combinations <- symmetrical_long_df %>% select(Make1,Make2) %>% distinct()
+# our_combinations$is_our <- 1
+# make_combinations <- merge(make_combinations,our_combinations,all.x = TRUE)
+# 
+# missing_combinations <- make_combinations %>% filter(is.na(is_our))
+# missing_combinations <- missing_combinations[missing_combinations$Make1!=missing_combinations$Make2,]
+# 
+# missing_combinations$is_our <- NULL
+#   
+# sort_pair <- function(x, y) {
+#   sorted <- sort(c(x, y))
+#   paste(sorted[1], sorted[2], sep = "_")
+# }
+# 
+# unique_combinations <- missing_combinations %>%
+#   mutate(Sorted_Pair = mapply(sort_pair, Make1, Make2)) %>%
+#   distinct(Sorted_Pair, .keep_all = TRUE) %>%
+#   select(-Sorted_Pair)
+
+```
+
+## Correlation
+
+```{r}
+
+results <- data.frame(year=integer(), cor_googletrends_structured=numeric(), cor_googletrends_visual=numeric(), cor_googletrends_combination=numeric())
+
+# top_selling_makes <- read.csv('exp_uk_product_data.csv', stringsAsFactors=FALSE) %>% group_by(make) %>% summarise(shares=sum(shares)) %>% slice_max(order_by = shares, n = 21) %>% pull(make)
+
+for(year in 2008:2017){
+    structured_data <- read.csv(paste0("./input_validation_test/mds_structured_",year,".csv"),stringsAsFactors = FALSE)
+    structured_data <- structured_data %>% group_by(make) %>% summarise(x=mean(s_x),y=mean(s_y))
+    # structured_data <- structured_data %>% group_by(make) %>% summarise(x=sum(s_x*shares),y=sum(s_y*shares))
+    str_dist_matrix <- as.matrix(dist(structured_data[, c("x", "y")]))
+    rownames(str_dist_matrix) <- structured_data$make
+    colnames(str_dist_matrix) <- structured_data$make
+    
+    visual_data <- read.csv(paste0("./input_validation_test/mds_visual_",year,".csv"),stringsAsFactors = FALSE)
+    visual_data <- visual_data %>% group_by(make) %>% summarise(x=mean(v_x),y=mean(v_y))
+    # visual_data <- visual_data %>% group_by(make) %>% summarise(x=sum(v_x*shares),y=sum(v_y*shares))
+    viz_dist_matrix <- as.matrix(dist(visual_data[, c("x", "y")]))
+    rownames(viz_dist_matrix) <- visual_data$make
+    colnames(viz_dist_matrix) <- visual_data$make
+    
+    combination_data <- read.csv(paste0("./input_validation_test/mds_combination_",year,".csv"),stringsAsFactors = FALSE)
+    combination_data <- combination_data %>% group_by(make) %>% summarise(x=mean(m_x),y=mean(m_y))
+    # combination_data <- combination_data %>% group_by(make) %>% summarise(x=sum(m_x*shares),y=sum(m_y*shares))
+    mix_dist_matrix <- as.matrix(dist(combination_data[, c("x", "y")]))
+    rownames(mix_dist_matrix) <- combination_data$make
+    colnames(mix_dist_matrix) <- combination_data$make
+    
+    googletrends_data <- year_matrices[[as.character(year)]]
+    googletrends_data <- (max(googletrends_data)-googletrends_data)/(max(googletrends_data)-min(googletrends_data))
+    # googletrends_data <- 1/(googletrends_data+1e-10)
+    # print(max(googletrends_data))
+    googletrends_matrix <- as.matrix(unclass(googletrends_data))
+    rownames(googletrends_matrix) <- attr(googletrends_data, "dimnames")[[1]]
+    colnames(googletrends_matrix) <- attr(googletrends_data, "dimnames")[[2]]
+    
+    common_names <- intersect(rownames(str_dist_matrix), rownames(googletrends_matrix))
+    googletrends_matrix_subset <- googletrends_matrix[common_names, common_names]
+    
+    # str_dist_matrix <- str_dist_matrix[top_selling_makes, top_selling_makes]
+    # viz_dist_matrix <- viz_dist_matrix[top_selling_makes, top_selling_makes]
+    # mix_dist_matrix <- mix_dist_matrix[top_selling_makes, top_selling_makes]
+    # googletrends_matrix_subset <- googletrends_matrix[top_selling_makes, top_selling_makes]
+    
+    googletrends_vec <- googletrends_matrix_subset[upper.tri(googletrends_matrix_subset, diag = FALSE)]
+    structured_vec <- str_dist_matrix[upper.tri(str_dist_matrix, diag = FALSE)]
+    visual_vec <- viz_dist_matrix[upper.tri(viz_dist_matrix, diag = FALSE)]
+    combination_vec <- mix_dist_matrix[upper.tri(mix_dist_matrix, diag = FALSE)]
+
+    cor_googletrends_structured <- cor(googletrends_vec, structured_vec)
+    cor_googletrends_visual <- cor(googletrends_vec, visual_vec)
+    cor_googletrends_combination <- cor(googletrends_vec, combination_vec)
+    
+    results <- rbind(results, data.frame(year=year, cor_googletrends_structured=cor_googletrends_structured, cor_googletrends_visual=cor_googletrends_visual, cor_googletrends_combination=cor_googletrends_combination))
+
+}
+
+print(results)
+
+```
+
+## Regression
+
+```{r}
+
+regression_data <- data.frame(Make1=character(),Make2=character(),Y=numeric(),Xx_make1=numeric(),Xy_make1=numeric(),Xx_make2=numeric(),Xy_make2=numeric(),Xx=numeric(),Xy=numeric(),Vx_make1=numeric(),Vy_make1=numeric(),Vx_make2=numeric(),Vy_make2=numeric(),Vx=numeric(),Vy=numeric(),Mx_make1=numeric(),My_make1=numeric(),Mx_make2=numeric(),My_make2=numeric(),Mx=numeric(),My=numeric())
+
+for(year in 2008:2017){
+    structured_data <- read.csv(paste0("./input_validation_test/mds_structured_",year,".csv"),stringsAsFactors = FALSE)
+    # structured_data <- structured_data %>% group_by(make) %>% summarise(x=mean(s_x),y=mean(s_y))
+    structured_data <- structured_data %>% group_by(make) %>% summarise(x=sum(s_x*shares),y=sum(s_y*shares))
+
+    visual_data <- read.csv(paste0("./input_validation_test/mds_visual_",year,".csv"),stringsAsFactors = FALSE)
+    # visual_data <- visual_data %>% group_by(make) %>% summarise(x=mean(v_x),y=mean(v_y))
+    visual_data <- visual_data %>% group_by(make) %>% summarise(x=sum(v_x*shares),y=sum(v_y*shares))
+
+    combination_data <- read.csv(paste0("./input_validation_test/mds_combination_",year,".csv"),stringsAsFactors = FALSE)
+    # combination_data <- combination_data %>% group_by(make) %>% summarise(x=mean(m_x),y=mean(m_y))
+    combination_data <- combination_data %>% group_by(make) %>% summarise(x=sum(m_x*shares),y=sum(m_y*shares))
+
+    googletrends_data <- year_matrices[[as.character(year)]]
+    # googletrends_data <- (max(googletrends_data)-googletrends_data)/(max(googletrends_data)-min(googletrends_data))
+    # googletrends_data <- 1/(googletrends_data+1e-10)
+    # print(max(googletrends_data))
+    googletrends_matrix <- as.matrix(unclass(googletrends_data))
+    rownames(googletrends_matrix) <- attr(googletrends_data, "dimnames")[[1]]
+    colnames(googletrends_matrix) <- attr(googletrends_data, "dimnames")[[2]]
+    matrix_df <- as.data.frame(as.table(googletrends_matrix))
+    colnames(matrix_df) <- c("Make1", "Make2", "Y")
+    
+    regression_xdata <- matrix_df %>% left_join(structured_data %>% select(make, x, y) %>% rename(Xx_make1 = x, Xy_make1 = y , Make1 = make), by = "Make1") %>% left_join(structured_data %>% select(make, x, y) %>% rename(Xx_make2 = x, Xy_make2 = y , Make2 = make), by = "Make2") %>% filter(!is.na(Xx_make1) & !is.na(Xx_make2)) %>% mutate(Xx = Xx_make1 - Xx_make2, Xy = Xy_make1 - Xy_make2) %>% filter(Make1!=Make2)
+    
+    regression_vdata <- matrix_df %>% left_join(visual_data %>% select(make, x, y) %>% rename(Vx_make1 = x, Vy_make1 = y , Make1 = make), by = "Make1") %>% left_join(visual_data %>% select(make, x, y) %>% rename(Vx_make2 = x, Vy_make2 = y , Make2 = make), by = "Make2") %>% filter(!is.na(Vx_make1) & !is.na(Vx_make2)) %>% mutate(Vx = Vx_make1 - Vx_make2, Vy = Vy_make1 - Vy_make2) %>% filter(Make1!=Make2)
+    
+    regression_mdata <- matrix_df %>% left_join(combination_data %>% select(make, x, y) %>% rename(Mx_make1 = x, My_make1 = y , Make1 = make), by = "Make1") %>% left_join(combination_data %>% select(make, x, y) %>% rename(Mx_make2 = x, My_make2 = y , Make2 = make), by = "Make2") %>% filter(!is.na(Mx_make1) & !is.na(Mx_make2)) %>% mutate(Mx = Mx_make1 - Mx_make2, My = My_make1 - My_make2) %>% filter(Make1!=Make2)
+    
+    temp <- merge(regression_xdata,regression_vdata,by=c("Make1","Make2","Y"))
+    temp <- merge(temp,regression_mdata,by=c("Make1","Make2","Y"))
+    
+    regression_data <- rbind(regression_data,temp)
+
+}
+
+model_str <- lm(Y ~ Xx + Xy, data = regression_data)
+model_viz <- lm(Y ~ Vx + Vy, data = regression_data)
+model_comb <- lm(Y ~ Mx + My, data = regression_data)
+model_str_viz <- lm(Y ~ Xx + Xy + Vx + Vy, data = regression_data)
+model_all <- lm(Y ~ Xx + Xy + Vx + Vy + Mx + My, data = regression_data)
+
+summary(model_str)
+summary(model_viz)
+summary(model_comb)
+summary(model_str_viz)
+summary(model_all)
+
+```
+

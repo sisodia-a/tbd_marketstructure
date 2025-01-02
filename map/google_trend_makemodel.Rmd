@@ -1,0 +1,870 @@
+---
+title: "Google Trend"
+author: "Ankit Sisodia"
+date: "Dec 25, 2024"
+output: html_document
+---
+
+## Importing Libraries
+
+```{r}
+
+library(tidyr)
+library(dplyr)
+library(stargazer)
+
+rm(list=ls())
+
+```
+
+## Basic Validation
+
+```{r eval=FALSE}
+
+df_make_model <- read.csv('exp_uk_product_data.csv', stringsAsFactors=FALSE)
+sales_make_model <- df_make_model %>% group_by(make,model,Segment,Segment_Desc) %>% summarise(sales=sum(quantity))
+sales_make_model$make_model <- paste(sales_make_model$make,sales_make_model$model)
+
+top_makemodels <- sales_make_model %>% arrange(desc(sales)) %>% head(80)
+sum(top_makemodels$sales)/sum(sales_make_model$sales)
+
+df_segA <- top_makemodels %>% filter(Segment==1)
+df_segB <- top_makemodels %>% filter(Segment==2)
+df_segC <- top_makemodels %>% filter(Segment==3)
+df_segD <- top_makemodels %>% filter(Segment==4)
+df_segE <- top_makemodels %>% filter(Segment==5)
+df_segJ <- top_makemodels %>% filter(Segment==7)
+df_segM <- top_makemodels %>% filter(Segment==8)
+
+## Segment A
+
+googletrend_segA <- read.csv('./googletrends_validation/segments/segA.csv', header=TRUE)
+
+names(googletrend_segA)[1] <- "market_ids"
+names(googletrend_segA)[2] <- "Peugeot 107.Volkswagen up!"
+names(googletrend_segA)[3] <- "Peugeot 107.Fiat Panda"
+names(googletrend_segA)[4] <- "Fiat 500.Ford Ka"
+names(googletrend_segA)[5] <- "Volkswagen up!.Fiat Panda"
+names(googletrend_segA)[6] <- "Kia Picanto.Fiat Panda"
+names(googletrend_segA)[7] <- "Citroen C1.Fiat Panda"
+names(googletrend_segA)[8] <- "Kia Picanto.Peugeot 107"
+names(googletrend_segA)[9] <- "Kia Picanto.Volkswagen up!"
+names(googletrend_segA)[10] <- "Ford Ka.Citroen C1"
+names(googletrend_segA)[11] <- "Ford Ka.Kia Picanto"
+names(googletrend_segA)[12] <- "Ford Ka.Peugeot 107"
+names(googletrend_segA)[13] <- "Ford Ka.Volkswagen up!"
+names(googletrend_segA)[14] <- "Toyota AYGO.Kia Picanto"
+names(googletrend_segA)[15] <- "Toyota AYGO.Peugeot 107"
+names(googletrend_segA)[16] <- "Toyota AYGO.Volkswagen up!"
+names(googletrend_segA)[17] <- "Toyota AYGO.Fiat Panda"
+names(googletrend_segA)[18] <- "Hyundai i10.Ford Ka"
+names(googletrend_segA)[19] <- "Hyundai i10.Citroen C1"
+names(googletrend_segA)[20] <- "Hyundai i10.Kia Picanto"
+names(googletrend_segA)[21] <- "Hyundai i10.Peugeot 107"
+names(googletrend_segA)[22] <- "Fiat 500.Peugeot 107"
+names(googletrend_segA)[23] <- "Fiat 500.Volkswagen up!"
+names(googletrend_segA)[24] <- "Fiat 500.Fiat Panda"
+names(googletrend_segA)[25] <- "Hyundai i10.Toyota AYGO"
+names(googletrend_segA)[26] <- "Fiat 500.Hyundai i10"
+names(googletrend_segA)[27] <- "Fiat 500.Toyota AYGO"
+names(googletrend_segA)[28] <- "Fiat 500.Citroen C1"
+names(googletrend_segA)[29] <- "Fiat 500.Kia Picanto"
+names(googletrend_segA)[30] <- "Ford Ka.Fiat Panda"
+names(googletrend_segA)[31] <- "Citroen C1.Kia Picanto"
+names(googletrend_segA)[32] <- "Citroen C1.Peugeot 107"
+names(googletrend_segA)[33] <- "Citroen C1.Volkswagen up!"
+names(googletrend_segA)[34] <- "Hyundai i10.Volkswagen up!"
+names(googletrend_segA)[35] <- "Hyundai i10.Fiat Panda"
+names(googletrend_segA)[36] <- "Toyota AYGO.Ford Ka"
+names(googletrend_segA)[37] <- "Toyota AYGO.Citroen C1"
+
+long_df <- googletrend_segA %>% pivot_longer(cols = -market_ids, names_to = "MakeModelPair", values_to = "Similarity") %>% separate(MakeModelPair, into = c("MakeModel1", "MakeModel2"), sep = "\\.")
+
+makemodels <- sort(unique(c(long_df$MakeModel1, long_df$MakeModel2)))
+print(makemodels)
+
+long_df$MakeModel1 <- factor(long_df$MakeModel1, levels = makemodels)
+long_df$MakeModel2 <- factor(long_df$MakeModel2, levels = makemodels)
+
+year_matrices <- list()
+
+years <- unique(long_df$market_ids)
+
+flipped_df <- long_df %>% mutate(MakeModel1_flipped = MakeModel2, MakeModel2_flipped = MakeModel1) %>% select(market_ids, MakeModel1_flipped, MakeModel2_flipped, Similarity) %>% dplyr::rename(MakeModel1 = MakeModel1_flipped, MakeModel2 = MakeModel2_flipped)
+
+symmetrical_long_df <- bind_rows(long_df, flipped_df)
+
+symmetrical_long_df <- symmetrical_long_df %>% group_by(market_ids, MakeModel1, MakeModel2) %>% summarise(Similarity = max(Similarity), .groups = 'drop')
+
+year_matrices <- list()
+
+for (yr in unique(symmetrical_long_df$market_ids)) {
+  df_year <- filter(symmetrical_long_df, market_ids == yr)
+  sim_matrix <- xtabs(Similarity ~ MakeModel1 + MakeModel2, data = df_year)
+  year_matrices[[as.character(yr)]] <- sim_matrix
+}
+
+for (yr in names(year_matrices)) {
+  matrix_file_name <- paste0("./googletrends_validation/segAmm_symmetrical_similarity_matrix_", yr, ".csv")
+  coordinate_file_name <- paste0("./googletrends_validation/segAmm_mds_googletrends_",yr,".csv")
+  mds_result <- cmdscale(year_matrices[[yr]], k = 2)
+  mds_df <- data.frame(Make = rownames(year_matrices[[yr]]),X = mds_result[, 1],Y = mds_result[, 2])
+  write.csv(mds_df, coordinate_file_name, row.names = FALSE)
+  write.csv(year_matrices[[yr]], file = matrix_file_name, row.names = TRUE)
+}
+
+## Segment B
+
+googletrend_segB <- read.csv('./googletrends_validation/segments/segB.csv', header=TRUE)
+
+names(googletrend_segB) <- sapply(names(googletrend_segB), function(x) {
+  # Replace the first period with a space
+  x <- sub("\\.", " ", x)
+  # Replace the third period with a space (find the second one and apply `sub` again)
+  x <- sub("^(.*?\\..*?)\\.", "\\1 ", x)
+  return(x)
+})
+names(googletrend_segB) <- gsub("\\bmini\\b", "MINI", names(googletrend_segB), ignore.case = TRUE)
+names(googletrend_segB) <- gsub("\\bSkoda\\b", "SKODA", names(googletrend_segB), ignore.case = TRUE)
+names(googletrend_segB) <- gsub("\\bMazda2\\b", "Mazda Mazda2", names(googletrend_segB), ignore.case = TRUE)
+names(googletrend_segB) <- gsub("\\bDS3\\b", "DS 3", names(googletrend_segB), ignore.case = TRUE)
+names(googletrend_segB)[1] <- "market_ids"
+
+names(googletrend_segB)[149] <- "Peugeot 207.Peugeot 208"
+names(googletrend_segB)[161] <- "Mazda Mazda2.DS 3"
+names(googletrend_segB)[162] <- "Mazda Mazda2.Suzuki Swift"
+names(googletrend_segB)[177] <- "Mazda Mazda2.Kia Rio"
+names(googletrend_segB)[178] <- "Mazda Mazda2.Dacia Sandero"
+names(googletrend_segB)[179] <- "DS 3.Suzuki Swift"
+names(googletrend_segB)[180] <- "DS 3.Kia Rio"
+names(googletrend_segB)[181] <- "DS 3.Dacia Sandero"
+
+long_df <- googletrend_segB %>% pivot_longer(cols = -market_ids, names_to = "MakeModelPair", values_to = "Similarity") %>% separate(MakeModelPair, into = c("MakeModel1", "MakeModel2"), sep = "\\.")
+
+makemodels <- sort(unique(c(long_df$MakeModel1, long_df$MakeModel2)))
+print(makemodels)
+
+long_df$MakeModel1 <- factor(long_df$MakeModel1, levels = makemodels)
+long_df$MakeModel2 <- factor(long_df$MakeModel2, levels = makemodels)
+
+year_matrices <- list()
+
+years <- unique(long_df$market_ids)
+
+flipped_df <- long_df %>% mutate(MakeModel1_flipped = MakeModel2, MakeModel2_flipped = MakeModel1) %>% select(market_ids, MakeModel1_flipped, MakeModel2_flipped, Similarity) %>% dplyr::rename(MakeModel1 = MakeModel1_flipped, MakeModel2 = MakeModel2_flipped)
+
+symmetrical_long_df <- bind_rows(long_df, flipped_df)
+
+symmetrical_long_df <- symmetrical_long_df %>% group_by(market_ids, MakeModel1, MakeModel2) %>% summarise(Similarity = max(Similarity), .groups = 'drop')
+
+year_matrices <- list()
+
+for (yr in unique(symmetrical_long_df$market_ids)) {
+  df_year <- filter(symmetrical_long_df, market_ids == yr)
+  sim_matrix <- xtabs(Similarity ~ MakeModel1 + MakeModel2, data = df_year)
+  year_matrices[[as.character(yr)]] <- sim_matrix
+}
+
+for (yr in names(year_matrices)) {
+  matrix_file_name <- paste0("./googletrends_validation/segBmm_symmetrical_similarity_matrix_", yr, ".csv")
+  coordinate_file_name <- paste0("./googletrends_validation/segBmm_mds_googletrends_",yr,".csv")
+  mds_result <- cmdscale(year_matrices[[yr]], k = 2)
+  mds_df <- data.frame(Make = rownames(year_matrices[[yr]]),X = mds_result[, 1],Y = mds_result[, 2])
+  write.csv(mds_df, coordinate_file_name, row.names = FALSE)
+  write.csv(year_matrices[[yr]], file = matrix_file_name, row.names = TRUE)
+}
+
+## Segment C
+
+googletrend_segC <- read.csv('./googletrends_validation/segments/segC.csv', header=TRUE)
+
+names(googletrend_segC) <- sapply(names(googletrend_segC), function(x) {
+  # Replace the first period with a space
+  x <- sub("\\.", " ", x)
+  # Replace the third period with a space (find the second one and apply `sub` again)
+  x <- sub("^(.*?\\..*?)\\.", "\\1 ", x)
+  return(x)
+})
+names(googletrend_segC)[1] <- "market_ids"
+names(googletrend_segC) <- gsub("\\bSkoda\\b", "SKODA", names(googletrend_segC), ignore.case = TRUE)
+names(googletrend_segC) <- gsub("\\bMazda3\\b", "Mazda Mazda3", names(googletrend_segC), ignore.case = TRUE)
+names(googletrend_segC) <- gsub("BMW\\.1", "BMW 1", names(googletrend_segC))
+names(googletrend_segC) <- gsub("Mercedes\\.Benz", "Mercedes-Benz", names(googletrend_segC))
+names(googletrend_segC) <- gsub("A\\.Class", "A Class", names(googletrend_segC))
+names(googletrend_segC) <- gsub("Benz\\.A", "Benz A", names(googletrend_segC))
+names(googletrend_segC) <- gsub("1\\.Series", "1 Series", names(googletrend_segC))
+names(googletrend_segC) <- gsub("A Class ", "A Class\\.", names(googletrend_segC))
+names(googletrend_segC) <- gsub("A Class\\. ", "A Class\\.", names(googletrend_segC))
+names(googletrend_segC) <- gsub("Mazda3 ", "Mazda3\\.", names(googletrend_segC))
+names(googletrend_segC) <- gsub("Mercedes Benz A Class", "Mercedes-Benz A Class", names(googletrend_segC))
+
+names(googletrend_segC)[70] <- "BMW 1 Series.Mazda Mazda3"
+names(googletrend_segC)[73] <- "Mercedes-Benz A Class.Honda Civic"
+names(googletrend_segC)[74] <- "Mercedes-Benz A Class.SKODA Octavia"
+names(googletrend_segC)[75] <- "Mercedes-Benz A Class.Peugeot 308"
+names(googletrend_segC)[76] <- "Mercedes-Benz A Class.SEAT Leon"
+names(googletrend_segC)[77] <- "Mercedes-Benz A Class.Toyota Auris"
+names(googletrend_segC)[78] <- "Mercedes-Benz A Class.Renault Megane"
+names(googletrend_segC)[79] <- "Mercedes-Benz A Class.Hyundai i30"
+names(googletrend_segC)[80] <- "Mercedes-Benz A Class.Kia Ceed"
+names(googletrend_segC)[81] <- "Mercedes-Benz A Class.Mazda Mazda3"
+names(googletrend_segC)[82] <- "Mercedes-Benz A Class.Volvo V40"
+names(googletrend_segC)[83] <- "Mercedes-Benz A Class.Toyota Prius"
+names(googletrend_segC)[130] <- "Toyota Auris.Toyota Prius"
+names(googletrend_segC)[139] <- "Mazda Mazda3.Volvo V40"
+names(googletrend_segC)[140] <- "Mazda Mazda3.Toyota Prius"
+
+long_df <- googletrend_segC %>% pivot_longer(cols = -market_ids, names_to = "MakeModelPair", values_to = "Similarity") %>% separate(MakeModelPair, into = c("MakeModel1", "MakeModel2"), sep = "\\.")
+
+makemodels <- sort(unique(c(long_df$MakeModel1, long_df$MakeModel2)))
+print(makemodels)
+
+long_df$MakeModel1 <- factor(long_df$MakeModel1, levels = makemodels)
+long_df$MakeModel2 <- factor(long_df$MakeModel2, levels = makemodels)
+
+year_matrices <- list()
+
+years <- unique(long_df$market_ids)
+
+flipped_df <- long_df %>% mutate(MakeModel1_flipped = MakeModel2, MakeModel2_flipped = MakeModel1) %>% select(market_ids, MakeModel1_flipped, MakeModel2_flipped, Similarity) %>% dplyr::rename(MakeModel1 = MakeModel1_flipped, MakeModel2 = MakeModel2_flipped)
+
+symmetrical_long_df <- bind_rows(long_df, flipped_df)
+
+symmetrical_long_df <- symmetrical_long_df %>% group_by(market_ids, MakeModel1, MakeModel2) %>% summarise(Similarity = max(Similarity), .groups = 'drop')
+
+year_matrices <- list()
+
+for (yr in unique(symmetrical_long_df$market_ids)) {
+  df_year <- filter(symmetrical_long_df, market_ids == yr)
+  sim_matrix <- xtabs(Similarity ~ MakeModel1 + MakeModel2, data = df_year)
+  year_matrices[[as.character(yr)]] <- sim_matrix
+}
+
+for (yr in names(year_matrices)) {
+  matrix_file_name <- paste0("./googletrends_validation/segCmm_symmetrical_similarity_matrix_", yr, ".csv")
+  coordinate_file_name <- paste0("./googletrends_validation/segCmm_mds_googletrends_",yr,".csv")
+  mds_result <- cmdscale(year_matrices[[yr]], k = 2)
+  mds_df <- data.frame(Make = rownames(year_matrices[[yr]]),X = mds_result[, 1],Y = mds_result[, 2])
+  write.csv(mds_df, coordinate_file_name, row.names = FALSE)
+  write.csv(year_matrices[[yr]], file = matrix_file_name, row.names = TRUE)
+}
+
+## Segment D
+
+googletrend_segD <- read.csv('./googletrends_validation/segments/segD.csv', header=TRUE)
+
+names(googletrend_segD) <- sapply(names(googletrend_segD), function(x) {
+  # Replace the first period with a space
+  x <- sub("\\.", " ", x)
+  # Replace the third period with a space (find the second one and apply `sub` again)
+  x <- sub("^(.*?\\..*?)\\.", "\\1 ", x)
+  return(x)
+})
+names(googletrend_segD)[1] <- "market_ids"
+names(googletrend_segD) <- gsub("3\\.Series", "3 Series", names(googletrend_segD))
+names(googletrend_segD) <- gsub("4\\.Series", "4 Series", names(googletrend_segD))
+names(googletrend_segD) <- gsub("C\\.Class", "C Class", names(googletrend_segD))
+names(googletrend_segD) <- gsub("Benz\\.C", "Benz C", names(googletrend_segD))
+names(googletrend_segD) <- gsub("Mercedes Benz", "Mercedes-Benz", names(googletrend_segD))
+names(googletrend_segD) <- gsub("C Class ", "C Class\\.", names(googletrend_segD))
+names(googletrend_segD) <- gsub("BMW\\.4", "BMW 4", names(googletrend_segD))
+
+names(googletrend_segD)[7] <- "Mercedes-Benz C Class.Ford Mondeo"
+names(googletrend_segD)[8] <- "Mercedes-Benz C Class.Volkswagen Passat"
+names(googletrend_segD)[9] <- "Mercedes-Benz C Class.Audi A5"
+names(googletrend_segD)[24] <- "Audi A4.Audi A5"
+names(googletrend_segD)[28] <- "Mercedes-Benz C Class.Vauxhall Insignia"
+names(googletrend_segD)[29] <- "Mercedes-Benz C Class.Audi A4"
+
+long_df <- googletrend_segD %>% pivot_longer(cols = -market_ids, names_to = "MakeModelPair", values_to = "Similarity") %>% separate(MakeModelPair, into = c("MakeModel1", "MakeModel2"), sep = "\\.")
+
+makemodels <- sort(unique(c(long_df$MakeModel1, long_df$MakeModel2)))
+print(makemodels)
+
+long_df$MakeModel1 <- factor(long_df$MakeModel1, levels = makemodels)
+long_df$MakeModel2 <- factor(long_df$MakeModel2, levels = makemodels)
+
+year_matrices <- list()
+
+years <- unique(long_df$market_ids)
+
+flipped_df <- long_df %>% mutate(MakeModel1_flipped = MakeModel2, MakeModel2_flipped = MakeModel1) %>% select(market_ids, MakeModel1_flipped, MakeModel2_flipped, Similarity) %>% dplyr::rename(MakeModel1 = MakeModel1_flipped, MakeModel2 = MakeModel2_flipped)
+
+symmetrical_long_df <- bind_rows(long_df, flipped_df)
+
+symmetrical_long_df <- symmetrical_long_df %>% group_by(market_ids, MakeModel1, MakeModel2) %>% summarise(Similarity = max(Similarity), .groups = 'drop')
+
+year_matrices <- list()
+
+for (yr in unique(symmetrical_long_df$market_ids)) {
+  df_year <- filter(symmetrical_long_df, market_ids == yr)
+  sim_matrix <- xtabs(Similarity ~ MakeModel1 + MakeModel2, data = df_year)
+  year_matrices[[as.character(yr)]] <- sim_matrix
+}
+
+for (yr in names(year_matrices)) {
+  matrix_file_name <- paste0("./googletrends_validation/segDmm_symmetrical_similarity_matrix_", yr, ".csv")
+  coordinate_file_name <- paste0("./googletrends_validation/segDmm_mds_googletrends_",yr,".csv")
+  mds_result <- cmdscale(year_matrices[[yr]], k = 2)
+  mds_df <- data.frame(Make = rownames(year_matrices[[yr]]),X = mds_result[, 1],Y = mds_result[, 2])
+  write.csv(mds_df, coordinate_file_name, row.names = FALSE)
+  write.csv(year_matrices[[yr]], file = matrix_file_name, row.names = TRUE)
+}
+
+## Segment E
+
+googletrend_segE <- read.csv('./googletrends_validation/segments/segE.csv', header=TRUE)
+
+names(googletrend_segE) <- sapply(names(googletrend_segE), function(x) {
+  # Replace the first period with a space
+  x <- sub("\\.", " ", x)
+  # Replace the third period with a space (find the second one and apply `sub` again)
+  x <- sub("^(.*?\\..*?)\\.", "\\1 ", x)
+  return(x)
+})
+names(googletrend_segE)[1] <- "market_ids"
+
+names(googletrend_segE)[2] <- "BMW 5 Series.Audi A6"
+names(googletrend_segE)[3] <- "BMW 5 Series.Jaguar XF"
+
+long_df <- googletrend_segE %>% pivot_longer(cols = -market_ids, names_to = "MakeModelPair", values_to = "Similarity") %>% separate(MakeModelPair, into = c("MakeModel1", "MakeModel2"), sep = "\\.")
+
+makemodels <- sort(unique(c(long_df$MakeModel1, long_df$MakeModel2)))
+print(makemodels)
+
+long_df$MakeModel1 <- factor(long_df$MakeModel1, levels = makemodels)
+long_df$MakeModel2 <- factor(long_df$MakeModel2, levels = makemodels)
+
+year_matrices <- list()
+
+years <- unique(long_df$market_ids)
+
+flipped_df <- long_df %>% mutate(MakeModel1_flipped = MakeModel2, MakeModel2_flipped = MakeModel1) %>% select(market_ids, MakeModel1_flipped, MakeModel2_flipped, Similarity) %>% dplyr::rename(MakeModel1 = MakeModel1_flipped, MakeModel2 = MakeModel2_flipped)
+
+symmetrical_long_df <- bind_rows(long_df, flipped_df)
+
+symmetrical_long_df <- symmetrical_long_df %>% group_by(market_ids, MakeModel1, MakeModel2) %>% summarise(Similarity = max(Similarity), .groups = 'drop')
+
+year_matrices <- list()
+
+for (yr in unique(symmetrical_long_df$market_ids)) {
+  df_year <- filter(symmetrical_long_df, market_ids == yr)
+  sim_matrix <- xtabs(Similarity ~ MakeModel1 + MakeModel2, data = df_year)
+  year_matrices[[as.character(yr)]] <- sim_matrix
+}
+
+# for (yr in names(year_matrices)) {
+#   matrix_file_name <- paste0("./googletrends_validation/segEmm_symmetrical_similarity_matrix_", yr, ".csv")
+#   coordinate_file_name <- paste0("./googletrends_validation/segEmm_mds_googletrends_",yr,".csv")
+#   mds_result <- cmdscale(year_matrices[[yr]], k = 2)
+#   mds_df <- data.frame(Make = rownames(year_matrices[[yr]]),X = mds_result[, 1],Y = mds_result[, 2])
+#   write.csv(mds_df, coordinate_file_name, row.names = FALSE)
+#   write.csv(year_matrices[[yr]], file = matrix_file_name, row.names = TRUE)
+# }
+
+## Segment J
+
+googletrend_segJ <- read.csv('./googletrends_validation/segments/segJ.csv', header=TRUE)
+
+names(googletrend_segJ) <- sapply(names(googletrend_segJ), function(x) {
+  # Replace the first period with a space
+  x <- sub("\\.", " ", x)
+  # Replace the third period with a space (find the second one and apply `sub` again)
+  x <- sub("^(.*?\\..*?)\\.", "\\1 ", x)
+  return(x)
+})
+names(googletrend_segJ)[1] <- "market_ids"
+names(googletrend_segJ) <- gsub("\\bSkoda\\b", "SKODA", names(googletrend_segJ), ignore.case = TRUE)
+names(googletrend_segJ) <- gsub("\\bmini\\b", "MINI", names(googletrend_segJ), ignore.case = TRUE)
+names(googletrend_segJ) <- gsub("CR\\.V", "CR-V", names(googletrend_segJ), ignore.case = TRUE)
+names(googletrend_segJ) <- gsub("Rover\\.Freelander", "Rover Freelander", names(googletrend_segJ), ignore.case = TRUE)
+names(googletrend_segJ) <- gsub("Land\\Rover", "Land Rover", names(googletrend_segJ), ignore.case = TRUE)
+names(googletrend_segJ) <- gsub("CR V", "CR-V", names(googletrend_segJ), ignore.case = TRUE)
+names(googletrend_segJ) <- gsub("Honda\\.", "Honda ", names(googletrend_segJ), ignore.case = TRUE)
+names(googletrend_segJ) <- gsub("Land\\.Rover", "Land Rover", names(googletrend_segJ), ignore.case = TRUE)
+
+names(googletrend_segJ)[10] <- "Peugeot 2008.Peugeot 3008"
+names(googletrend_segJ)[11] <- "Nissan Qashqai.Nissan Juke"
+
+names(googletrend_segJ)
+
+long_df <- googletrend_segJ %>% pivot_longer(cols = -market_ids, names_to = "MakeModelPair", values_to = "Similarity") %>% separate(MakeModelPair, into = c("MakeModel1", "MakeModel2"), sep = "\\.")
+
+makemodels <- sort(unique(c(long_df$MakeModel1, long_df$MakeModel2)))
+print(makemodels)
+
+long_df$MakeModel1 <- factor(long_df$MakeModel1, levels = makemodels)
+long_df$MakeModel2 <- factor(long_df$MakeModel2, levels = makemodels)
+
+year_matrices <- list()
+
+years <- unique(long_df$market_ids)
+
+flipped_df <- long_df %>% mutate(MakeModel1_flipped = MakeModel2, MakeModel2_flipped = MakeModel1) %>% select(market_ids, MakeModel1_flipped, MakeModel2_flipped, Similarity) %>% dplyr::rename(MakeModel1 = MakeModel1_flipped, MakeModel2 = MakeModel2_flipped)
+
+symmetrical_long_df <- bind_rows(long_df, flipped_df)
+
+symmetrical_long_df <- symmetrical_long_df %>% group_by(market_ids, MakeModel1, MakeModel2) %>% summarise(Similarity = max(Similarity), .groups = 'drop')
+
+year_matrices <- list()
+
+for (yr in unique(symmetrical_long_df$market_ids)) {
+  df_year <- filter(symmetrical_long_df, market_ids == yr)
+  sim_matrix <- xtabs(Similarity ~ MakeModel1 + MakeModel2, data = df_year)
+  year_matrices[[as.character(yr)]] <- sim_matrix
+}
+
+for (yr in names(year_matrices)) {
+  matrix_file_name <- paste0("./googletrends_validation/segJmm_symmetrical_similarity_matrix_", yr, ".csv")
+  coordinate_file_name <- paste0("./googletrends_validation/segJmm_mds_googletrends_",yr,".csv")
+  mds_result <- cmdscale(year_matrices[[yr]], k = 2)
+  mds_df <- data.frame(Make = rownames(year_matrices[[yr]]),X = mds_result[, 1],Y = mds_result[, 2])
+  write.csv(mds_df, coordinate_file_name, row.names = FALSE)
+  write.csv(year_matrices[[yr]], file = matrix_file_name, row.names = TRUE)
+}
+
+## Segment M
+
+googletrend_segM <- read.csv('./googletrends_validation/segments/segM.csv', header=TRUE)
+
+names(googletrend_segM) <- sapply(names(googletrend_segM), function(x) {
+  # Replace the first period with a space
+  x <- sub("\\.", " ", x)
+  # Replace the third period with a space (find the second one and apply `sub` again)
+  x <- sub("^(.*?\\..*?)\\.", "\\1 ", x)
+  return(x)
+})
+names(googletrend_segM)[1] <- "market_ids"
+names(googletrend_segM) <- gsub("C Max", "C-Max", names(googletrend_segM), ignore.case = TRUE)
+names(googletrend_segM) <- gsub("S Max", "S-Max", names(googletrend_segM), ignore.case = TRUE)
+names(googletrend_segM) <- gsub("C\\.Max", "C-Max", names(googletrend_segM), ignore.case = TRUE)
+names(googletrend_segM) <- gsub("Ford\\.C", "Ford C", names(googletrend_segM), ignore.case = TRUE)
+names(googletrend_segM) <- gsub("Ford\\.S", "Ford S", names(googletrend_segM), ignore.case = TRUE)
+
+names(googletrend_segM)[4] <- "Vauxhall Zafira.Vauxhall Meriva"
+names(googletrend_segM)[7] <- "Ford C-Max.Ford S-Max"
+
+long_df <- googletrend_segM %>% pivot_longer(cols = -market_ids, names_to = "MakeModelPair", values_to = "Similarity") %>% separate(MakeModelPair, into = c("MakeModel1", "MakeModel2"), sep = "\\.")
+
+makemodels <- sort(unique(c(long_df$MakeModel1, long_df$MakeModel2)))
+print(makemodels)
+
+long_df$MakeModel1 <- factor(long_df$MakeModel1, levels = makemodels)
+long_df$MakeModel2 <- factor(long_df$MakeModel2, levels = makemodels)
+
+year_matrices <- list()
+
+years <- unique(long_df$market_ids)
+
+flipped_df <- long_df %>% mutate(MakeModel1_flipped = MakeModel2, MakeModel2_flipped = MakeModel1) %>% select(market_ids, MakeModel1_flipped, MakeModel2_flipped, Similarity) %>% dplyr::rename(MakeModel1 = MakeModel1_flipped, MakeModel2 = MakeModel2_flipped)
+
+symmetrical_long_df <- bind_rows(long_df, flipped_df)
+
+symmetrical_long_df <- symmetrical_long_df %>% group_by(market_ids, MakeModel1, MakeModel2) %>% summarise(Similarity = max(Similarity), .groups = 'drop')
+
+year_matrices <- list()
+
+for (yr in unique(symmetrical_long_df$market_ids)) {
+  df_year <- filter(symmetrical_long_df, market_ids == yr)
+  sim_matrix <- xtabs(Similarity ~ MakeModel1 + MakeModel2, data = df_year)
+  year_matrices[[as.character(yr)]] <- sim_matrix
+}
+
+# for (yr in names(year_matrices)) {
+#   matrix_file_name <- paste0("./googletrends_validation/segMmm_symmetrical_similarity_matrix_", yr, ".csv")
+#   coordinate_file_name <- paste0("./googletrends_validation/segMmm_mds_googletrends_",yr,".csv")
+#   mds_result <- cmdscale(year_matrices[[yr]], k = 2)
+#   mds_df <- data.frame(Make = rownames(year_matrices[[yr]]),X = mds_result[, 1],Y = mds_result[, 2])
+#   write.csv(mds_df, coordinate_file_name, row.names = FALSE)
+#   write.csv(year_matrices[[yr]], file = matrix_file_name, row.names = TRUE)
+# }
+
+```
+
+## Prep for Regression
+
+```{r}
+uk_product_data <- read.csv('exp_uk_product_data.csv', stringsAsFactors=FALSE)
+
+sales_make_model <- uk_product_data %>% group_by(make,model,Segment,Segment_Desc) %>% summarise(sales=sum(quantity))
+top_makemodels <- sales_make_model %>% arrange(desc(sales)) %>% head(80)
+top_makemodels$sales <- NULL
+
+uk_product_data <- merge(uk_product_data,top_makemodels)
+
+uk_product_data$Viz1 <- NULL
+uk_product_data$Viz2 <- NULL
+uk_product_data$Viz3 <- NULL
+uk_product_data$Viz4 <- NULL
+uk_product_data$Viz5 <- NULL
+
+uk_product_data$supply_instruments0 <- NULL
+uk_product_data$supply_instruments1 <- NULL
+uk_product_data$supply_instruments2 <- NULL
+uk_product_data$supply_instruments3 <- NULL
+uk_product_data$supply_instruments4 <- NULL
+uk_product_data$supply_instruments5 <- NULL
+uk_product_data$supply_instruments6 <- NULL
+uk_product_data$supply_instruments7 <- NULL
+uk_product_data$supply_instruments8 <- NULL
+uk_product_data$supply_instruments9 <- NULL
+
+uk_product_data$demand_instruments0 <- NULL
+uk_product_data$demand_instruments1 <- NULL
+uk_product_data$demand_instruments2 <- NULL
+uk_product_data$demand_instruments3 <- NULL
+uk_product_data$demand_instruments4 <- NULL
+uk_product_data$demand_instruments5 <- NULL
+uk_product_data$demand_instruments6 <- NULL
+uk_product_data$demand_instruments7 <- NULL
+
+filename_train <- read.csv('xife_s5b50m40_filename_train.csv', stringsAsFactors=FALSE, header=FALSE)
+filename_valid <- read.csv('xife_s5b50m40_filename_validation.csv', stringsAsFactors=FALSE, header=FALSE)
+mean_params_train <- read.csv('xife_s5b50m40_mean_params_train.csv', stringsAsFactors=FALSE, header=FALSE)
+mean_params_valid <- read.csv('xife_s5b50m40_mean_params_validation.csv', stringsAsFactors=FALSE, header=FALSE)
+
+mean_params <- rbind(mean_params_train,mean_params_valid)
+filename <- rbind(filename_train,filename_valid)
+visual_att <- cbind(filename,mean_params)
+rm(mean_params_train,mean_params_valid,filename_train,filename_valid,filename,mean_params)
+colnames(visual_att)[1] <- "Image_name"
+
+select_image_table <- read.csv('exp_selected_python_image_table.csv',stringsAsFactors = FALSE)
+
+select_visual_att <- merge(select_image_table,visual_att)
+df_data <- merge(uk_product_data,select_visual_att,all.x = TRUE)
+
+select_visual_att <- select_visual_att %>% dplyr::select(Image_name,make,model,market_ids,gen_ids,car_ids,bodyshape=V13,grille_height=V7,boxiness=V15,grille_width=V17)
+
+df_data <- merge(uk_product_data,select_visual_att,all.x = TRUE)
+temp <- df_data %>% filter(is.na(Image_name))
+
+df_data$old_segment_desc <- df_data$Segment_Desc
+df_data$segment_name <- ifelse(df_data$Segment_Desc=="A-Segment (Minicars)","A",ifelse(df_data$Segment_Desc=="B-segment (subcompact)","B",ifelse(df_data$Segment_Desc=="C-segment (compact)","C",ifelse(df_data$Segment_Desc=="D-segment (mid-size)","D",ifelse(df_data$Segment_Desc=="E-segment (mid-size luxury sedan)","E",ifelse(df_data$Segment_Desc=="J-segment (SUV)","J",ifelse(df_data$Segment_Desc=="M-segment (MPV)","M","X")))))))
+df_data$Segment_Desc <- NULL
+
+df_make_selection1 <- df_data %>% group_by(market_ids,segment_name) %>% summarise(markets=n(),image_avail=sum(!is.na(gen_ids)),total_quantity=sum(quantity))
+df_make_selection1$pc_image_avail <- df_make_selection1$image_avail/df_make_selection1$markets
+
+df_make_selection2 <- df_data %>% group_by(market_ids,segment_name) %>% filter(!is.na(gen_ids)) %>%  summarise(available_quantity=sum(quantity))
+
+df_make_selection <- merge(df_make_selection1,df_make_selection2,all.x = TRUE)
+df_make_selection$pc_image_qty <- df_make_selection$available_quantity/df_make_selection$total_quantity
+df_make_selection$markets <- NULL
+df_make_selection$image_avail <- NULL
+df_make_selection$total_quantity <- NULL
+df_make_selection$available_quantity <- NULL
+
+rm(df_make_selection1,df_make_selection2)
+
+df_data <- df_data %>% filter(!is.na(gen_ids)) %>% dplyr::select(clustering_ids,make,model,market_ids,segment_name,car_ids,firm_ids,quantity,shares,prices,mpg,hpwt,space,Seats,Doors,mpd,boxiness,bodyshape,grille_height,grille_width,Image_name)
+df_data$model_name <- paste(df_data$make, df_data$model)
+df_data$model_name <- tolower(df_data$model_name)
+
+orig_df_data <- df_data
+
+```
+
+## Regressions
+
+```{r}
+
+df_data <- orig_df_data
+
+# df_data$prices <- scale(log10(df_data$prices))
+# df_data$hpwt <- scale(log10(df_data$hpwt))
+# df_data$mpg <- scale(df_data$mpg)
+# df_data$space <- scale(df_data$space)
+# 
+# df_data$boxiness <- scale(df_data$boxiness)
+# df_data$bodyshape <- scale(df_data$bodyshape)
+# df_data$grille_height <- scale(df_data$grille_height)
+# df_data$grille_width <- scale(df_data$grille_width)
+
+df_data_scaled <- df_data %>% group_by(segment_name) %>% mutate(prices = scale(log10(prices)),hpwt = scale(log10(hpwt)),mpg = scale(mpg),space = scale(space),boxiness = scale(boxiness),bodyshape = scale(bodyshape),grille_height = scale(grille_height),grille_width = scale(grille_width)) %>% ungroup()
+
+features <- c("hpwt", "space", "mpg", "prices", "boxiness", "bodyshape", "grille_height", "grille_width")
+comparisons <- data.frame(score = numeric(),hpwt_diff = numeric(),space_diff = numeric(),mpg_diff = numeric(),prices_diff = numeric(),boxiness_diff = numeric(),bodyshape_diff = numeric(),grille_height_diff = numeric(),grille_width_diff = numeric(),car_A = character(),car_B = character(),market_ids = numeric(),stringsAsFactors = FALSE)
+segments <- c("A","B","C","D","J")
+# segments <- c("A","B","C","D","E","J","M")
+
+for(year in 2016:2017){
+    characteristics <- df_data %>% filter(market_ids==year)
+    structured_data <- read.csv(paste0("./input_validation_test/mds_structured_",year,".csv"),stringsAsFactors = FALSE)
+    visual_data <- read.csv(paste0("./input_validation_test/mds_visual_",year,".csv"),stringsAsFactors = FALSE)
+    combination_data <- read.csv(paste0("./input_validation_test/mds_combination_",year,".csv"),stringsAsFactors = FALSE)
+    
+    for(k in 1:length(segments))
+    {
+      googletrends_data <- read.csv(paste0("./googletrends_validation/seg",segments[k],"mm_symmetrical_similarity_matrix_",year,".csv"),stringsAsFactors = FALSE)
+    googletrends_data$X <- tolower(googletrends_data$X)
+    names(googletrends_data)[2:ncol(googletrends_data)] <- googletrends_data$X
+    rownames(googletrends_data) <- googletrends_data$X
+    googletrends_data$X <- NULL
+    googletrends_data[lower.tri(googletrends_data, diag = TRUE)] <- NA
+    
+    # Iterate through the Google Trends matrix to create comparison pairs
+for(i in 1:nrow(googletrends_data)) {
+  car_A <- rownames(googletrends_data)[i]
+
+  # Iterate through comparison scores (starting from column 2)
+  for(j in i+1:ncol(googletrends_data)) {
+    score <- googletrends_data[i, j]
+    
+    # if(score > 0) {  # Only consider non-zero comparisons
+      car_B <- gsub("\\.", " ", colnames(googletrends_data)[j])  # Get car B name
+      
+      if(!(car_A %in% characteristics$model_name) || !(car_B %in% characteristics$model_name)) {
+        next  # Skip if either car is not in df_data
+      }
+
+      # Get features for both cars
+      car_A_features <- characteristics[characteristics$model_name == car_A, features]
+      car_B_features <- characteristics[characteristics$model_name == car_B, features]
+      
+      # Calculate differences
+      diffs <- car_A_features - car_B_features
+      
+      # Add to comparisons dataframe
+      comparisons <- rbind(comparisons, data.frame(
+        score = score,
+        hpwt_diff = diffs$hpwt,
+        space_diff = diffs$space,
+        mpg_diff = diffs$mpg,
+        prices_diff = diffs$prices,
+        boxiness_diff = diffs$boxiness,
+        bodyshape_diff = diffs$bodyshape,
+        grille_height_diff = diffs$grille_height,
+        grille_width_diff = diffs$grille_width,
+        car_A = car_A,
+        car_B = car_B,
+        market_ids = year
+      ))
+    # }
+  }
+}
+}
+
+# comparisons <- comparisons[comparisons$score>0,]
+# Fit the linear regression model
+}
+
+comparisons$hpwt_diff <- abs(comparisons$hpwt_diff)
+comparisons$space_diff <- abs(comparisons$space_diff)
+comparisons$mpg_diff <- abs(comparisons$mpg_diff)
+comparisons$prices_diff <- abs(comparisons$prices_diff)
+comparisons$boxiness_diff <- abs(comparisons$boxiness_diff)
+comparisons$bodyshape_diff <- abs(comparisons$bodyshape_diff)
+comparisons$grille_height_diff <- abs(comparisons$grille_height_diff)
+comparisons$grille_width_diff <- abs(comparisons$grille_width_diff)
+
+comparisons <- merge(comparisons,df_data %>% select(car_A=model_name,segment_name)) %>% distinct()
+
+comparisons <- merge(comparisons,df_data %>% select(car_A=model_name,make_A=make,quantity_A=quantity,market_ids)) %>% distinct()
+
+comparisons <- merge(comparisons,df_data %>% select(car_B=model_name,make_B=make,quantity_B=quantity,market_ids)) %>% distinct()
+
+segment_sales <- df_data %>% group_by(segment_name,market_ids) %>% summarise(segment_sales=sum(quantity))
+
+comparisons <- merge(comparisons,segment_sales)
+comparisons$normalized_score <- comparisons$score/((comparisons$quantity_A+comparisons$quantity_B)/comparisons$segment_sales)
+
+summary(comparisons[comparisons$market_ids==2016 & comparisons$segment_name=="A",c(5,19,6:13)])
+summary(comparisons[comparisons$market_ids==2016 & comparisons$segment_name=="B",c(5,19,6:13)])
+summary(comparisons[comparisons$market_ids==2016 & comparisons$segment_name=="C",c(5,19,6:13)])
+summary(comparisons[comparisons$market_ids==2016 & comparisons$segment_name=="D",c(5,19,6:13)])
+summary(comparisons[comparisons$market_ids==2016 & comparisons$segment_name=="J",c(5,19,6:13)])
+
+summary(comparisons[comparisons$market_ids==2017 & comparisons$segment_name=="A",c(5,19,6:13)])
+summary(comparisons[comparisons$market_ids==2017 & comparisons$segment_name=="B",c(5,19,6:13)])
+summary(comparisons[comparisons$market_ids==2017 & comparisons$segment_name=="C",c(5,19,6:13)])
+summary(comparisons[comparisons$market_ids==2017 & comparisons$segment_name=="D",c(5,19,6:13)])
+summary(comparisons[comparisons$market_ids==2017 & comparisons$segment_name=="J",c(5,19,6:13)])
+
+comparisons$is_audi <- ifelse(comparisons$make_A=="Audi" | comparisons$make_B=="Audi",1,0)
+comparisons$is_bmw <- ifelse(comparisons$make_A=="BMW" | comparisons$make_B=="BMW",1,0)
+comparisons$is_citroen <- ifelse(comparisons$make_A=="Citroen" | comparisons$make_B=="Citroen",1,0)
+comparisons$is_dacia <- ifelse(comparisons$make_A=="Dacia" | comparisons$make_B=="Dacia",1,0)
+comparisons$is_ds <- ifelse(comparisons$make_A=="DS" | comparisons$make_B=="DS",1,0)
+comparisons$is_fiat <- ifelse(comparisons$make_A=="Fiat" | comparisons$make_B=="Fiat",1,0)
+comparisons$is_ford <- ifelse(comparisons$make_A=="Ford" | comparisons$make_B=="Ford",1,0)
+comparisons$is_honda <- ifelse(comparisons$make_A=="Honda" | comparisons$make_B=="Honda",1,0)
+comparisons$is_hyundai <- ifelse(comparisons$make_A=="Hyundai" | comparisons$make_B=="Hyundai",1,0)
+comparisons$is_kia <- ifelse(comparisons$make_A=="Kia" | comparisons$make_B=="Kia",1,0)
+comparisons$is_mazda <- ifelse(comparisons$make_A=="Mazda" | comparisons$make_B=="Mazda",1,0)
+comparisons$is_mercedesbenz <- ifelse(comparisons$make_A=="Mercedes-Benz" | comparisons$make_B=="Mercedes-Benz",1,0)
+comparisons$is_mini <- ifelse(comparisons$make_A=="MINI" | comparisons$make_B=="MINI",1,0)
+comparisons$is_nissan <- ifelse(comparisons$make_A=="Nissan" | comparisons$make_B=="Nissan",1,0)
+comparisons$is_peugeot <- ifelse(comparisons$make_A=="Peugeot" | comparisons$make_B=="Peugeot",1,0)
+comparisons$is_renault <- ifelse(comparisons$make_A=="Renault" | comparisons$make_B=="Renault",1,0)
+comparisons$is_seat <- ifelse(comparisons$make_A=="SEAT" | comparisons$make_B=="SEAT",1,0)
+comparisons$is_skoda <- ifelse(comparisons$make_A=="SKODA" | comparisons$make_B=="SKODA",1,0)
+comparisons$is_toyota <- ifelse(comparisons$make_A=="Toyota" | comparisons$make_B=="Toyota",1,0)
+comparisons$is_vauxhall <- ifelse(comparisons$make_A=="Vauxhall" | comparisons$make_B=="Vauxhall",1,0)
+comparisons$is_volkswagen <- ifelse(comparisons$make_A=="Volkswagen" | comparisons$make_B=="Volkswagen",1,0)
+comparisons$is_volvo <- ifelse(comparisons$make_A=="Volvo" | comparisons$make_B=="Volvo",1,0)
+
+comparisons_with_dummies <- comparisons %>% select(normalized_score,score,hpwt_diff,space_diff,mpg_diff,prices_diff,boxiness_diff,bodyshape_diff,grille_height_diff,grille_width_diff,is_audi,is_bmw,is_citroen,is_dacia,is_ds,is_fiat,is_ford,is_honda,is_hyundai,is_kia,is_mazda,is_mercedesbenz,is_mini,is_nissan,is_peugeot,is_renault,is_seat,is_skoda,is_toyota,is_vauxhall,is_volkswagen,is_volvo,segment_name)
+
+hist(log10(comparisons_with_dummies$normalized_score+1))
+hist(log10(comparisons_with_dummies$score+1))
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+segment_name, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+segment_name, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff+segment_name, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff+segment_name, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - segment_name - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - segment_name - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ . - segment_name- score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - segment_name - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model3,model5,model7, type = 'text',single.row = T)
+stargazer(model1,model3,model5,model7)
+
+stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
+stargazer(model2,model4,model6,model8)
+
+# stargazer(model1,model3, type = 'text',single.row = T)
+# stargazer(model1,model3)
+
+```
+
+## Segment-Wise Regressions
+
+```{r}
+
+orig_comparisons_with_dummies <- comparisons_with_dummies
+
+comparisons_with_dummies <- orig_comparisons_with_dummies %>% filter(segment_name=="A")
+comparisons_with_dummies$segment_name <- NULL
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ .- score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model3,model5,model7, type = 'text',single.row = T)
+stargazer(model1,model3,model5,model7)
+
+stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
+stargazer(model2,model4,model6,model8)
+
+comparisons_with_dummies <- orig_comparisons_with_dummies %>% filter(segment_name=="B")
+comparisons_with_dummies$segment_name <- NULL
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ .- score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model3,model5,model7, type = 'text',single.row = T)
+stargazer(model1,model3,model5,model7)
+
+stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
+stargazer(model2,model4,model6,model8)
+
+comparisons_with_dummies <- orig_comparisons_with_dummies %>% filter(segment_name=="C")
+comparisons_with_dummies$segment_name <- NULL
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ .- score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model3,model5,model7, type = 'text',single.row = T)
+stargazer(model1,model3,model5,model7)
+
+stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
+stargazer(model2,model4,model6,model8)
+
+comparisons_with_dummies <- orig_comparisons_with_dummies %>% filter(segment_name=="D")
+comparisons_with_dummies$segment_name <- NULL
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ .- score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model3,model5,model7, type = 'text',single.row = T)
+stargazer(model1,model3,model5,model7)
+
+stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
+stargazer(model2,model4,model6,model8)
+
+comparisons_with_dummies <- orig_comparisons_with_dummies %>% filter(segment_name=="J")
+comparisons_with_dummies$segment_name <- NULL
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ . - score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model3,model5,model7, type = 'text',single.row = T)
+stargazer(model1,model3,model5,model7)
+
+stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
+stargazer(model2,model4,model6,model8)
+
+```
