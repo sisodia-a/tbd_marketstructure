@@ -41,7 +41,7 @@ for img in os.listdir(path_to_files):
 		name = img
 		make = uk_product_data.loc[uk_product_data.Image_name == name, 'Automaker']
 		makemodel = uk_product_data.loc[uk_product_data.Image_name == name, 'clustering_ids']
-		color = uk_product_data.loc[uk_product_data.Image_name == name, 'Color']
+		color = uk_product_data.loc[uk_product_data.Image_name == name, 'Segment']
 		firm = uk_product_data.loc[uk_product_data.Image_name == name, 'Firm']
 		region = uk_product_data.loc[uk_product_data.Image_name == name, 'Region']
 		price = uk_product_data.loc[uk_product_data.Image_name == name, 'Price']
@@ -53,8 +53,8 @@ for img in os.listdir(path_to_files):
 		wt = uk_product_data.loc[uk_product_data.Image_name == name, 'wt']
 		length = uk_product_data.loc[uk_product_data.Image_name == name, 'len']
 		wid = uk_product_data.loc[uk_product_data.Image_name == name, 'wid']
-		ht = uk_product_data.loc[uk_product_data.Image_name == name, 'eswt']
-		wb = uk_product_data.loc[uk_product_data.Image_name == name, 'Gas_emission']
+		ht = uk_product_data.loc[uk_product_data.Image_name == name, 'ht']
+		wb = uk_product_data.loc[uk_product_data.Image_name == name, 'wb']
 		in_uk_blp = uk_product_data.loc[uk_product_data.Image_name == name, 'in_uk_blp'].to_numpy()
 		xi_fe = uk_product_data.loc[uk_product_data.Image_name == name, 'xi_fe']
 		shares = uk_product_data.loc[uk_product_data.Image_name == name, 'shares']
@@ -154,10 +154,10 @@ print(v_color.shape)
 print(v_firm.shape)
 print(v_region.shape)
 
-v_make = np.delete(v_make,np.s_[3],axis=1)
+v_make = np.delete(v_make,np.s_[9],axis=1)
 v_makemodel = np.delete(v_makemodel,np.s_[0],axis=1)
-v_color = np.delete(v_color,np.s_[0],axis=1)
+v_color = np.delete(v_color,np.s_[6],axis=1)
 v_firm = np.delete(v_firm,np.s_[16],axis=1)
-v_region = np.delete(v_region,np.s_[5],axis=1)
+v_region = np.delete(v_region,np.s_[6],axis=1)
 
 np.savez("cars_original.npz",cars=array_of_images,make=v_make,makemodel=v_makemodel,color=v_color,firm=v_firm,region=v_region,price=v_price,hp=v_hp,mpg=v_mpg,mpd=v_mpd,filenames=filenames,in_uk_blp=v_in_uk_blp,hpwt=v_hpwt,space=v_space,wt=v_wt,length=v_len,wid=v_wid,ht=v_ht,wb=v_wb,xi_fe=v_xi_fe,shares=v_shares,wph=v_wph)
