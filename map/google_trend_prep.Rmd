@@ -44,7 +44,6 @@ print(correlation_data)
 
 ```
 
-
 ## Reading files
 
 ```{r}
@@ -78,7 +77,9 @@ year_matrices <- list()
 years <- unique(long_df$Year)
 
 # Step 1: Duplicate the rows with Make1 and Make2 swapped
-flipped_df <- long_df %>% mutate(Make1_flipped = Make2, Make2_flipped = Make1) %>% select(Year, Make1_flipped, Make2_flipped, Similarity) %>% rename(Make1 = Make1_flipped, Make2 = Make2_flipped)
+# flipped_df <- long_df %>% mutate(Make1_flipped = Make2, Make2_flipped = Make1) %>% select(Year, Make1_flipped, Make2_flipped, Similarity) %>% rename(Make1 = Make1_flipped, Make2 = Make2_flipped)
+
+flipped_df <- long_df %>% mutate(Make1_flipped = Make2, Make2_flipped = Make1) %>% select(Year, Make1_flipped, Make2_flipped, Similarity) %>% dplyr::rename(Make1 = Make1_flipped, Make2 = Make2_flipped)
 
 # Step 2: Combine original long_df with the flipped_df
 symmetrical_long_df <- bind_rows(long_df, flipped_df)
@@ -200,55 +201,55 @@ print(results)
 
 ```{r}
 
-regression_data <- data.frame(Make1=character(),Make2=character(),Y=numeric(),Xx_make1=numeric(),Xy_make1=numeric(),Xx_make2=numeric(),Xy_make2=numeric(),Xx=numeric(),Xy=numeric(),Vx_make1=numeric(),Vy_make1=numeric(),Vx_make2=numeric(),Vy_make2=numeric(),Vx=numeric(),Vy=numeric(),Mx_make1=numeric(),My_make1=numeric(),Mx_make2=numeric(),My_make2=numeric(),Mx=numeric(),My=numeric())
-
-for(year in 2008:2017){
-    structured_data <- read.csv(paste0("./input_validation_test/mds_structured_",year,".csv"),stringsAsFactors = FALSE)
-    # structured_data <- structured_data %>% group_by(make) %>% summarise(x=mean(s_x),y=mean(s_y))
-    structured_data <- structured_data %>% group_by(make) %>% summarise(x=sum(s_x*shares),y=sum(s_y*shares))
-
-    visual_data <- read.csv(paste0("./input_validation_test/mds_visual_",year,".csv"),stringsAsFactors = FALSE)
-    # visual_data <- visual_data %>% group_by(make) %>% summarise(x=mean(v_x),y=mean(v_y))
-    visual_data <- visual_data %>% group_by(make) %>% summarise(x=sum(v_x*shares),y=sum(v_y*shares))
-
-    combination_data <- read.csv(paste0("./input_validation_test/mds_combination_",year,".csv"),stringsAsFactors = FALSE)
-    # combination_data <- combination_data %>% group_by(make) %>% summarise(x=mean(m_x),y=mean(m_y))
-    combination_data <- combination_data %>% group_by(make) %>% summarise(x=sum(m_x*shares),y=sum(m_y*shares))
-
-    googletrends_data <- year_matrices[[as.character(year)]]
-    # googletrends_data <- (max(googletrends_data)-googletrends_data)/(max(googletrends_data)-min(googletrends_data))
-    # googletrends_data <- 1/(googletrends_data+1e-10)
-    # print(max(googletrends_data))
-    googletrends_matrix <- as.matrix(unclass(googletrends_data))
-    rownames(googletrends_matrix) <- attr(googletrends_data, "dimnames")[[1]]
-    colnames(googletrends_matrix) <- attr(googletrends_data, "dimnames")[[2]]
-    matrix_df <- as.data.frame(as.table(googletrends_matrix))
-    colnames(matrix_df) <- c("Make1", "Make2", "Y")
-    
-    regression_xdata <- matrix_df %>% left_join(structured_data %>% select(make, x, y) %>% rename(Xx_make1 = x, Xy_make1 = y , Make1 = make), by = "Make1") %>% left_join(structured_data %>% select(make, x, y) %>% rename(Xx_make2 = x, Xy_make2 = y , Make2 = make), by = "Make2") %>% filter(!is.na(Xx_make1) & !is.na(Xx_make2)) %>% mutate(Xx = Xx_make1 - Xx_make2, Xy = Xy_make1 - Xy_make2) %>% filter(Make1!=Make2)
-    
-    regression_vdata <- matrix_df %>% left_join(visual_data %>% select(make, x, y) %>% rename(Vx_make1 = x, Vy_make1 = y , Make1 = make), by = "Make1") %>% left_join(visual_data %>% select(make, x, y) %>% rename(Vx_make2 = x, Vy_make2 = y , Make2 = make), by = "Make2") %>% filter(!is.na(Vx_make1) & !is.na(Vx_make2)) %>% mutate(Vx = Vx_make1 - Vx_make2, Vy = Vy_make1 - Vy_make2) %>% filter(Make1!=Make2)
-    
-    regression_mdata <- matrix_df %>% left_join(combination_data %>% select(make, x, y) %>% rename(Mx_make1 = x, My_make1 = y , Make1 = make), by = "Make1") %>% left_join(combination_data %>% select(make, x, y) %>% rename(Mx_make2 = x, My_make2 = y , Make2 = make), by = "Make2") %>% filter(!is.na(Mx_make1) & !is.na(Mx_make2)) %>% mutate(Mx = Mx_make1 - Mx_make2, My = My_make1 - My_make2) %>% filter(Make1!=Make2)
-    
-    temp <- merge(regression_xdata,regression_vdata,by=c("Make1","Make2","Y"))
-    temp <- merge(temp,regression_mdata,by=c("Make1","Make2","Y"))
-    
-    regression_data <- rbind(regression_data,temp)
-
-}
-
-model_str <- lm(Y ~ Xx + Xy, data = regression_data)
-model_viz <- lm(Y ~ Vx + Vy, data = regression_data)
-model_comb <- lm(Y ~ Mx + My, data = regression_data)
-model_str_viz <- lm(Y ~ Xx + Xy + Vx + Vy, data = regression_data)
-model_all <- lm(Y ~ Xx + Xy + Vx + Vy + Mx + My, data = regression_data)
-
-summary(model_str)
-summary(model_viz)
-summary(model_comb)
-summary(model_str_viz)
-summary(model_all)
+# regression_data <- data.frame(Make1=character(),Make2=character(),Y=numeric(),Xx_make1=numeric(),Xy_make1=numeric(),Xx_make2=numeric(),Xy_make2=numeric(),Xx=numeric(),Xy=numeric(),Vx_make1=numeric(),Vy_make1=numeric(),Vx_make2=numeric(),Vy_make2=numeric(),Vx=numeric(),Vy=numeric(),Mx_make1=numeric(),My_make1=numeric(),Mx_make2=numeric(),My_make2=numeric(),Mx=numeric(),My=numeric())
+# 
+# for(year in 2008:2017){
+#     structured_data <- read.csv(paste0("./input_validation_test/mds_structured_",year,".csv"),stringsAsFactors = FALSE)
+#     # structured_data <- structured_data %>% group_by(make) %>% summarise(x=mean(s_x),y=mean(s_y))
+#     structured_data <- structured_data %>% group_by(make) %>% summarise(x=sum(s_x*shares),y=sum(s_y*shares))
+# 
+#     visual_data <- read.csv(paste0("./input_validation_test/mds_visual_",year,".csv"),stringsAsFactors = FALSE)
+#     # visual_data <- visual_data %>% group_by(make) %>% summarise(x=mean(v_x),y=mean(v_y))
+#     visual_data <- visual_data %>% group_by(make) %>% summarise(x=sum(v_x*shares),y=sum(v_y*shares))
+# 
+#     combination_data <- read.csv(paste0("./input_validation_test/mds_combination_",year,".csv"),stringsAsFactors = FALSE)
+#     # combination_data <- combination_data %>% group_by(make) %>% summarise(x=mean(m_x),y=mean(m_y))
+#     combination_data <- combination_data %>% group_by(make) %>% summarise(x=sum(m_x*shares),y=sum(m_y*shares))
+# 
+#     googletrends_data <- year_matrices[[as.character(year)]]
+#     # googletrends_data <- (max(googletrends_data)-googletrends_data)/(max(googletrends_data)-min(googletrends_data))
+#     # googletrends_data <- 1/(googletrends_data+1e-10)
+#     # print(max(googletrends_data))
+#     googletrends_matrix <- as.matrix(unclass(googletrends_data))
+#     rownames(googletrends_matrix) <- attr(googletrends_data, "dimnames")[[1]]
+#     colnames(googletrends_matrix) <- attr(googletrends_data, "dimnames")[[2]]
+#     matrix_df <- as.data.frame(as.table(googletrends_matrix))
+#     colnames(matrix_df) <- c("Make1", "Make2", "Y")
+#     
+#     regression_xdata <- matrix_df %>% left_join(structured_data %>% select(make, x, y) %>% rename(Xx_make1 = x, Xy_make1 = y , Make1 = make), by = "Make1") %>% left_join(structured_data %>% select(make, x, y) %>% rename(Xx_make2 = x, Xy_make2 = y , Make2 = make), by = "Make2") %>% filter(!is.na(Xx_make1) & !is.na(Xx_make2)) %>% mutate(Xx = Xx_make1 - Xx_make2, Xy = Xy_make1 - Xy_make2) %>% filter(Make1!=Make2)
+#     
+#     regression_vdata <- matrix_df %>% left_join(visual_data %>% select(make, x, y) %>% rename(Vx_make1 = x, Vy_make1 = y , Make1 = make), by = "Make1") %>% left_join(visual_data %>% select(make, x, y) %>% rename(Vx_make2 = x, Vy_make2 = y , Make2 = make), by = "Make2") %>% filter(!is.na(Vx_make1) & !is.na(Vx_make2)) %>% mutate(Vx = Vx_make1 - Vx_make2, Vy = Vy_make1 - Vy_make2) %>% filter(Make1!=Make2)
+#     
+#     regression_mdata <- matrix_df %>% left_join(combination_data %>% select(make, x, y) %>% rename(Mx_make1 = x, My_make1 = y , Make1 = make), by = "Make1") %>% left_join(combination_data %>% select(make, x, y) %>% rename(Mx_make2 = x, My_make2 = y , Make2 = make), by = "Make2") %>% filter(!is.na(Mx_make1) & !is.na(Mx_make2)) %>% mutate(Mx = Mx_make1 - Mx_make2, My = My_make1 - My_make2) %>% filter(Make1!=Make2)
+#     
+#     temp <- merge(regression_xdata,regression_vdata,by=c("Make1","Make2","Y"))
+#     temp <- merge(temp,regression_mdata,by=c("Make1","Make2","Y"))
+#     
+#     regression_data <- rbind(regression_data,temp)
+# 
+# }
+# 
+# model_str <- lm(Y ~ Xx + Xy, data = regression_data)
+# model_viz <- lm(Y ~ Vx + Vy, data = regression_data)
+# model_comb <- lm(Y ~ Mx + My, data = regression_data)
+# model_str_viz <- lm(Y ~ Xx + Xy + Vx + Vy, data = regression_data)
+# model_all <- lm(Y ~ Xx + Xy + Vx + Vy + Mx + My, data = regression_data)
+# 
+# summary(model_str)
+# summary(model_viz)
+# summary(model_comb)
+# summary(model_str_viz)
+# summary(model_all)
 
 ```
 

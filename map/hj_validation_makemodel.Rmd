@@ -1,7 +1,7 @@
 ---
 title: "The Car Project - Netzer Validation Method"
 author: "Ankit Sisodia"
-date: "May 8, 2024"
+date: "Jan 15, 2024"
 output: html_document
 ---
 
@@ -11,6 +11,7 @@ output: html_document
 
 library(caret)
 library(cowplot)
+library(doParallel) # For parallel processing
 library(dplyr)
 library(data.table)
 library(fixest)
@@ -26,6 +27,7 @@ library(lubridate)
 library(magick)
 library(MASS)  # for the isoMDS function
 library(purrr)
+library(ranger) # Faster Random Forest implementation
 library(randomForest)
 library(rddensity)
 library(rdrobust)
@@ -447,60 +449,166 @@ mean((correlation_results$cor_forum_combination[correlation_results$method=="mds
 
 ```{r}
 
-results_df <- data.frame(random_seed = integer(), year = integer(), str = numeric(), viz = numeric(), comb = numeric(), str_viz = numeric())
+# results_df <- data.frame(random_seed = integer(), year = integer(), str = numeric(), viz = numeric(), comb = numeric(), str_viz = numeric())
+# 
+# seeds <- 1:10
+# 
+# for(seed in seeds){
+#   set.seed(seed)
+# for(year in 2008:2017){
+#   structured_data <- read.csv(paste0("./output_validation_test/mds_structured_",year,".csv"),stringsAsFactors = FALSE)
+#   visual_data <- read.csv(paste0("./output_validation_test/mds_visual_",year,".csv"),stringsAsFactors = FALSE) 
+#   combination_data <- read.csv(paste0("./output_validation_test/mds_combination_",year,".csv"),stringsAsFactors = FALSE)
+#   forum_data <- read.csv(paste0("./output_validation_test/mds_forum_",year,".csv"),stringsAsFactors = FALSE)
+# 
+#   structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")]))[upper.tri(as.matrix(dist(structured_data[, c("x", "y")])))])
+#   visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")]))[upper.tri(as.matrix(dist(visual_data[, c("x", "y")])))])
+#   combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")]))[upper.tri(as.matrix(dist(combination_data[, c("x", "y")])))])
+#   forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")]))[upper.tri(as.matrix(dist(forum_data[, c("x", "y")])))])
+#   
+#   df <- data.frame(structured_data = structured_data, visual_data = visual_data, combination_data = combination_data, forum_data = forum_data)
+#   
+#   trainIndex <- createDataPartition(df$forum_data, p = .8, list = FALSE, times = 1)
+# 
+#   trainData <- df[ trainIndex,]
+#   testData  <- df[-trainIndex,]
+#   
+#   model_structured <- randomForest(forum_data ~ structured_data, data=trainData)
+#   model_visual <- randomForest(forum_data ~ visual_data, data=trainData)
+#   model_combination <- randomForest(forum_data ~ combination_data, data=trainData)
+#   model_structured_visual <- randomForest(forum_data ~ structured_data + visual_data, data=trainData)
+#   
+#   pred_structured <- predict(model_structured, testData)
+#   pred_visual <- predict(model_visual, testData)
+#   pred_combination <- predict(model_combination, testData)
+#   pred_structured_visual <- predict(model_structured_visual, testData)
+#   
+#   mae_structured <- mean(abs(pred_structured - testData$forum_data))
+#   mae_visual <- mean(abs(pred_visual - testData$forum_data))
+#   mae_combination <- mean(abs(pred_combination - testData$forum_data))
+#   mae_structured_visual <- mean(abs(pred_structured_visual - testData$forum_data))
+# 
+#   results_df <- rbind(results_df, data.frame(random_seed = seed, year = year, str = mae_structured, viz = mae_visual, comb = mae_combination, str_viz = mae_structured_visual))
+# 
+# 
+# }}
+# 
+# results_df$method <- "mds"
+# 
+# mds_results_df <- results_df
+# 
+# mean(mds_results_df$str)
+# mean(mds_results_df$viz)
+# mean(mds_results_df$comb)
+# mean(mds_results_df$str_viz)
+# 
+# rf_regression_results_df <- mds_results_df
 
-seeds <- 1:10
 
-for(seed in seeds){
-  set.seed(seed)
-for(year in 2008:2017){
-  structured_data <- read.csv(paste0("./output_validation_test/mds_structured_",year,".csv"),stringsAsFactors = FALSE)
-  visual_data <- read.csv(paste0("./output_validation_test/mds_visual_",year,".csv"),stringsAsFactors = FALSE) 
-  combination_data <- read.csv(paste0("./output_validation_test/mds_combination_",year,".csv"),stringsAsFactors = FALSE)
-  forum_data <- read.csv(paste0("./output_validation_test/mds_forum_",year,".csv"),stringsAsFactors = FALSE)
 
-  structured_data <- as.vector(as.matrix(dist(structured_data[, c("x", "y")]))[upper.tri(as.matrix(dist(structured_data[, c("x", "y")])))])
-  visual_data <- as.vector(as.matrix(dist(visual_data[, c("x", "y")]))[upper.tri(as.matrix(dist(visual_data[, c("x", "y")])))])
-  combination_data <- as.vector(as.matrix(dist(combination_data[, c("x", "y")]))[upper.tri(as.matrix(dist(combination_data[, c("x", "y")])))])
-  forum_data <- as.vector(as.matrix(dist(forum_data[, c("x", "y")]))[upper.tri(as.matrix(dist(forum_data[, c("x", "y")])))])
+
+
+
+
+
+all_structured_data <- list()
+all_visual_data <- list()
+all_combination_data <- list()
+all_forum_data <- list()
+structured_dist_list <- list()
+visual_dist_list <- list()
+combination_dist_list <- list()
+forum_dist_list <- list()
+for (year in 2008:2017) {
+  # Read CSVs
+  structured_df <- read.csv(paste0("./output_validation_test/mds_structured_", year, ".csv"), stringsAsFactors = FALSE)
+  visual_df <- read.csv(paste0("./output_validation_test/mds_visual_", year, ".csv"), stringsAsFactors = FALSE)
+  combo_df <- read.csv(paste0("./output_validation_test/mds_combination_", year, ".csv"), stringsAsFactors = FALSE)
+  forum_df <- read.csv(paste0("./output_validation_test/mds_forum_", year, ".csv"), stringsAsFactors = FALSE)
   
-  df <- data.frame(structured_data = structured_data, visual_data = visual_data, combination_data = combination_data, forum_data = forum_data)
+  # Store the data in memory
+  all_structured_data[[as.character(year)]] <- structured_df
+  all_visual_data[[as.character(year)]] <- visual_df
+  all_combination_data[[as.character(year)]] <- combo_df
+  all_forum_data[[as.character(year)]] <- forum_df
   
-  trainIndex <- createDataPartition(df$forum_data, p = .8, list = FALSE, times = 1)
+  # Precompute distances
+  structured_dist_list[[as.character(year)]] <- as.vector(as.matrix(dist(structured_df[, c("x", "y")])))[upper.tri(dist(structured_df[, c("x", "y")]))]
+  visual_dist_list[[as.character(year)]] <- as.vector(as.matrix(dist(visual_df[, c("x", "y")])))[upper.tri(dist(visual_df[, c("x", "y")]))]
+  combination_dist_list[[as.character(year)]] <- as.vector(as.matrix(dist(combo_df[, c("x", "y")])))[upper.tri(dist(combo_df[, c("x", "y")]))]
+  forum_dist_list[[as.character(year)]] <- as.vector(as.matrix(dist(forum_df[, c("x", "y")])))[upper.tri(dist(forum_df[, c("x", "y")]))]
+}
 
-  trainData <- df[ trainIndex,]
-  testData  <- df[-trainIndex,]
-  
-  model_structured <- randomForest(forum_data ~ structured_data, data=trainData)
-  model_visual <- randomForest(forum_data ~ visual_data, data=trainData)
-  model_combination <- randomForest(forum_data ~ combination_data, data=trainData)
-  model_structured_visual <- randomForest(forum_data ~ structured_data + visual_data, data=trainData)
-  
-  pred_structured <- predict(model_structured, testData)
-  pred_visual <- predict(model_visual, testData)
-  pred_combination <- predict(model_combination, testData)
-  pred_structured_visual <- predict(model_structured_visual, testData)
-  
-  mae_structured <- mean(abs(pred_structured - testData$forum_data))
-  mae_visual <- mean(abs(pred_visual - testData$forum_data))
-  mae_combination <- mean(abs(pred_combination - testData$forum_data))
-  mae_structured_visual <- mean(abs(pred_structured_visual - testData$forum_data))
+num_cores <- parallel::detectCores() - 1
+cl <- makeCluster(num_cores)
+registerDoParallel(cl)
 
-  results_df <- rbind(results_df, data.frame(random_seed = seed, year = year, str = mae_structured, viz = mae_visual, comb = mae_combination, str_viz = mae_structured_visual))
+results_df <- foreach(seed = 1:10, .combine = rbind) %:%
+  foreach(year = 2008:2017, .combine = rbind) %dopar% {
+    library(caret)  # Required for createDataPartition
+    library(ranger) # Required inside parallel processes
+    library(dplyr)  # Required inside parallel processes
+    
+    set.seed(seed)
+    
+    # Retrieve precomputed distances
+    structured_data <- structured_dist_list[[as.character(year)]]
+    visual_data <- visual_dist_list[[as.character(year)]]
+    combination_data <- combination_dist_list[[as.character(year)]]
+    forum_data <- forum_dist_list[[as.character(year)]]
+    
+    # Create a data frame for modeling
+    df <- data.frame(
+      structured_data = structured_data,
+      visual_data = visual_data,
+      combination_data = combination_data,
+      forum_data = forum_data
+    )
+    
+    # Train/test split
+    trainIndex <- createDataPartition(df$forum_data, p = 0.8, list = FALSE, times = 1)
+    trainData <- df[trainIndex,]
+    testData <- df[-trainIndex,]
+    
+    # Fit Random Forest models using `ranger`
+    model_structured <- ranger(forum_data ~ structured_data, data = trainData, num.trees = 100)
+    model_visual <- ranger(forum_data ~ visual_data, data = trainData, num.trees = 100)
+    model_combination <- ranger(forum_data ~ combination_data, data = trainData, num.trees = 100)
+    model_structured_visual <- ranger(forum_data ~ structured_data + visual_data, data = trainData, num.trees = 100)
+    
+    # Predictions
+    pred_structured <- predict(model_structured, data = testData)$predictions
+    pred_visual <- predict(model_visual, data = testData)$predictions
+    pred_combination <- predict(model_combination, data = testData)$predictions
+    pred_structured_visual <- predict(model_structured_visual, data = testData)$predictions
+    
+    # Compute MAE
+    mae_structured <- mean(abs(pred_structured - testData$forum_data))
+    mae_visual <- mean(abs(pred_visual - testData$forum_data))
+    mae_combination <- mean(abs(pred_combination - testData$forum_data))
+    mae_structured_visual <- mean(abs(pred_structured_visual - testData$forum_data))
+    
+    # Return the results as a one-row data frame
+    data.frame(
+      random_seed = seed,
+      year = year,
+      str = mae_structured,
+      viz = mae_visual,
+      comb = mae_combination,
+      str_viz = mae_structured_visual
+    )
+  }
 
+stopCluster(cl)
 
-}}
-
+# Combine results into a single data frame
 results_df$method <- "mds"
 
-mds_results_df <- results_df
-
-mean(mds_results_df$str)
-mean(mds_results_df$viz)
-mean(mds_results_df$comb)
-mean(mds_results_df$str_viz)
-
-rf_regression_results_df <- mds_results_df
+# Step 3: Summarize Results
+cat("Mean MAE (Structured):", mean(results_df$str), "\n")
+cat("Mean MAE (Visual):", mean(results_df$viz), "\n")
+cat("Mean MAE (Combination):", mean(results_df$comb), "\n")
+cat("Mean MAE (Structured + Visual):", mean(results_df$str_viz), "\n")
 
 ```
 

@@ -1,7 +1,7 @@
 ---
 title: "Google Trend"
 author: "Ankit Sisodia"
-date: "Dec 25, 2024"
+date: "Jan 15, 2025"
 output: html_document
 ---
 
@@ -518,10 +518,10 @@ uk_product_data$demand_instruments5 <- NULL
 uk_product_data$demand_instruments6 <- NULL
 uk_product_data$demand_instruments7 <- NULL
 
-filename_train <- read.csv('xife_s5b50m40_filename_train.csv', stringsAsFactors=FALSE, header=FALSE)
-filename_valid <- read.csv('xife_s5b50m40_filename_validation.csv', stringsAsFactors=FALSE, header=FALSE)
-mean_params_train <- read.csv('xife_s5b50m40_mean_params_train.csv', stringsAsFactors=FALSE, header=FALSE)
-mean_params_valid <- read.csv('xife_s5b50m40_mean_params_validation.csv', stringsAsFactors=FALSE, header=FALSE)
+filename_train <- read.csv('wb_wid_ht_s4b50m10_filename_train.csv', stringsAsFactors=FALSE, header=FALSE)
+filename_valid <- read.csv('wb_wid_ht_s4b50m10_filename_validation.csv', stringsAsFactors=FALSE, header=FALSE)
+mean_params_train <- read.csv('wb_wid_ht_s4b50m10_mean_params_train.csv', stringsAsFactors=FALSE, header=FALSE)
+mean_params_valid <- read.csv('wb_wid_ht_s4b50m10_mean_params_validation.csv', stringsAsFactors=FALSE, header=FALSE)
 
 mean_params <- rbind(mean_params_train,mean_params_valid)
 filename <- rbind(filename_train,filename_valid)
@@ -534,7 +534,7 @@ select_image_table <- read.csv('exp_selected_python_image_table.csv',stringsAsFa
 select_visual_att <- merge(select_image_table,visual_att)
 df_data <- merge(uk_product_data,select_visual_att,all.x = TRUE)
 
-select_visual_att <- select_visual_att %>% dplyr::select(Image_name,make,model,market_ids,gen_ids,car_ids,bodyshape=V13,grille_height=V7,boxiness=V15,grille_width=V17)
+select_visual_att <- select_visual_att %>% dplyr::select(Image_name,make,model,market_ids,gen_ids,car_ids,bodyshape=V7,grille_height=V12,boxiness=V16,grille_width=V20)
 
 df_data <- merge(uk_product_data,select_visual_att,all.x = TRUE)
 temp <- df_data %>% filter(is.na(Image_name))
@@ -568,7 +568,6 @@ orig_df_data <- df_data
 ## Regressions
 
 ```{r}
-
 df_data <- orig_df_data
 
 # df_data$prices <- scale(log10(df_data$prices))
@@ -704,6 +703,10 @@ comparisons$is_vauxhall <- ifelse(comparisons$make_A=="Vauxhall" | comparisons$m
 comparisons$is_volkswagen <- ifelse(comparisons$make_A=="Volkswagen" | comparisons$make_B=="Volkswagen",1,0)
 comparisons$is_volvo <- ifelse(comparisons$make_A=="Volvo" | comparisons$make_B=="Volvo",1,0)
 
+comparisons$is_luxury <- ifelse(comparisons$is_audi==1 | comparisons$is_bmw==1 | comparisons$is_mercedesbenz==1,1,0)
+
+comparisons$is_europe <- ifelse(comparisons$is_audi==1 | comparisons$is_bmw==1 | comparisons$is_citroen==1 | comparisons$is_dacia==1 | comparisons$is_ds==1 | comparisons$is_fiat==1 | comparisons$is_mercedesbenz==1 | comparisons$is_mini==1 | comparisons$is_peugeot==1 | comparisons$is_renault==1 | comparisons$is_seat==1 | comparisons$is_skoda==1 | comparisons$is_vauxhall==1 | comparisons$is_volkswagen==1 | comparisons$is_volvo==1,1,0)
+
 comparisons_with_dummies <- comparisons %>% select(normalized_score,score,hpwt_diff,space_diff,mpg_diff,prices_diff,boxiness_diff,bodyshape_diff,grille_height_diff,grille_width_diff,is_audi,is_bmw,is_citroen,is_dacia,is_ds,is_fiat,is_ford,is_honda,is_hyundai,is_kia,is_mazda,is_mercedesbenz,is_mini,is_nissan,is_peugeot,is_renault,is_seat,is_skoda,is_toyota,is_vauxhall,is_volkswagen,is_volvo,segment_name)
 
 hist(log10(comparisons_with_dummies$normalized_score+1))
@@ -725,14 +728,179 @@ model7 <- lm(log10(normalized_score+1) ~ . - segment_name- score, data = compari
 
 model8 <- lm(log10(score+1) ~ . - segment_name - normalized_score, data = comparisons_with_dummies)
 
-stargazer(model1,model3,model5,model7, type = 'text',single.row = T)
-stargazer(model1,model3,model5,model7)
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
+
+stargazer(model2,model6,model4,model8, type = 'text',single.row = T)
+stargazer(model2,model6,model4,model8)
+
+# stargazer(model1,model3, type = 'text',single.row = T)
+# stargazer(model1,model3)
+```
+
+## Segment-Wise Regressions
+
+```{r}
+
+orig_comparisons_with_dummies <- comparisons_with_dummies
+
+comparisons_with_dummies <- orig_comparisons_with_dummies %>% filter(segment_name=="A")
+comparisons_with_dummies$segment_name <- NULL
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ .- score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
 
 stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
 stargazer(model2,model4,model6,model8)
 
-# stargazer(model1,model3, type = 'text',single.row = T)
-# stargazer(model1,model3)
+comparisons_with_dummies <- orig_comparisons_with_dummies %>% filter(segment_name=="B")
+comparisons_with_dummies$segment_name <- NULL
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ .- score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
+
+stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
+stargazer(model2,model4,model6,model8)
+
+comparisons_with_dummies <- orig_comparisons_with_dummies %>% filter(segment_name=="C")
+comparisons_with_dummies$segment_name <- NULL
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ .- score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
+
+stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
+stargazer(model2,model4,model6,model8)
+
+comparisons_with_dummies <- orig_comparisons_with_dummies %>% filter(segment_name=="D")
+comparisons_with_dummies$segment_name <- NULL
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ .- score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
+
+stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
+stargazer(model2,model4,model6,model8)
+
+comparisons_with_dummies <- orig_comparisons_with_dummies %>% filter(segment_name=="J")
+comparisons_with_dummies$segment_name <- NULL
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ . - score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
+
+stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
+stargazer(model2,model4,model6,model8)
+
+```
+
+## is_europe
+
+```{r}
+
+comparisons_with_dummies <- comparisons %>% select(normalized_score,score,hpwt_diff,space_diff,mpg_diff,prices_diff,boxiness_diff,bodyshape_diff,grille_height_diff,grille_width_diff,is_europe,segment_name)
+
+hist(log10(comparisons_with_dummies$normalized_score+1))
+hist(log10(comparisons_with_dummies$score+1))
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+segment_name, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+segment_name, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff+segment_name, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff+segment_name, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - segment_name - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - segment_name - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ . - segment_name- score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - segment_name - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
+
+stargazer(model2,model6,model4,model8, type = 'text',single.row = T)
+stargazer(model2,model6,model4,model8)
 
 ```
 
@@ -761,8 +929,8 @@ model7 <- lm(log10(normalized_score+1) ~ .- score, data = comparisons_with_dummi
 
 model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
 
-stargazer(model1,model3,model5,model7, type = 'text',single.row = T)
-stargazer(model1,model3,model5,model7)
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
 
 stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
 stargazer(model2,model4,model6,model8)
@@ -786,8 +954,8 @@ model7 <- lm(log10(normalized_score+1) ~ .- score, data = comparisons_with_dummi
 
 model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
 
-stargazer(model1,model3,model5,model7, type = 'text',single.row = T)
-stargazer(model1,model3,model5,model7)
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
 
 stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
 stargazer(model2,model4,model6,model8)
@@ -811,8 +979,8 @@ model7 <- lm(log10(normalized_score+1) ~ .- score, data = comparisons_with_dummi
 
 model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
 
-stargazer(model1,model3,model5,model7, type = 'text',single.row = T)
-stargazer(model1,model3,model5,model7)
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
 
 stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
 stargazer(model2,model4,model6,model8)
@@ -836,8 +1004,8 @@ model7 <- lm(log10(normalized_score+1) ~ .- score, data = comparisons_with_dummi
 
 model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
 
-stargazer(model1,model3,model5,model7, type = 'text',single.row = T)
-stargazer(model1,model3,model5,model7)
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
 
 stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
 stargazer(model2,model4,model6,model8)
@@ -861,8 +1029,174 @@ model7 <- lm(log10(normalized_score+1) ~ . - score, data = comparisons_with_dumm
 
 model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
 
-stargazer(model1,model3,model5,model7, type = 'text',single.row = T)
-stargazer(model1,model3,model5,model7)
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
+
+stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
+stargazer(model2,model4,model6,model8)
+
+```
+
+## is_luxury
+
+```{r}
+
+comparisons_with_dummies <- comparisons %>% select(normalized_score,score,hpwt_diff,space_diff,mpg_diff,prices_diff,boxiness_diff,bodyshape_diff,grille_height_diff,grille_width_diff,is_luxury,segment_name)
+
+hist(log10(comparisons_with_dummies$normalized_score+1))
+hist(log10(comparisons_with_dummies$score+1))
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+segment_name, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+segment_name, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff+segment_name, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff+segment_name, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - segment_name - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - segment_name - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ . - segment_name- score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - segment_name - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
+
+stargazer(model2,model6,model4,model8, type = 'text',single.row = T)
+stargazer(model2,model6,model4,model8)
+
+```
+
+## Segment-Wise Regressions
+
+```{r}
+
+orig_comparisons_with_dummies <- comparisons_with_dummies
+
+comparisons_with_dummies <- orig_comparisons_with_dummies %>% filter(segment_name=="A")
+comparisons_with_dummies$segment_name <- NULL
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ .- score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
+
+stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
+stargazer(model2,model4,model6,model8)
+
+comparisons_with_dummies <- orig_comparisons_with_dummies %>% filter(segment_name=="B")
+comparisons_with_dummies$segment_name <- NULL
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ .- score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
+
+stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
+stargazer(model2,model4,model6,model8)
+
+comparisons_with_dummies <- orig_comparisons_with_dummies %>% filter(segment_name=="C")
+comparisons_with_dummies$segment_name <- NULL
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ .- score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
+
+stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
+stargazer(model2,model4,model6,model8)
+
+comparisons_with_dummies <- orig_comparisons_with_dummies %>% filter(segment_name=="D")
+comparisons_with_dummies$segment_name <- NULL
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ .- score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
+
+stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
+stargazer(model2,model4,model6,model8)
+
+comparisons_with_dummies <- orig_comparisons_with_dummies %>% filter(segment_name=="J")
+comparisons_with_dummies$segment_name <- NULL
+
+model1 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model2 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff, data = comparisons_with_dummies)
+
+model3 <- lm(log10(normalized_score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model4 <- lm(log10(score+1) ~ hpwt_diff+space_diff+mpg_diff+prices_diff+boxiness_diff+bodyshape_diff+grille_height_diff+grille_width_diff, data = comparisons_with_dummies)
+
+model5 <- lm(log10(normalized_score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - score, data = comparisons_with_dummies)
+
+model6 <- lm(log10(score+1) ~ . - boxiness_diff - bodyshape_diff - grille_height_diff - grille_width_diff - normalized_score, data = comparisons_with_dummies)
+
+model7 <- lm(log10(normalized_score+1) ~ . - score, data = comparisons_with_dummies)
+
+model8 <- lm(log10(score+1) ~ . - normalized_score, data = comparisons_with_dummies)
+
+stargazer(model1,model5,model3,model7, type = 'text',single.row = T)
+stargazer(model1,model5,model3,model7)
 
 stargazer(model2,model4,model6,model8, type = 'text',single.row = T)
 stargazer(model2,model4,model6,model8)
