@@ -1,6 +1,6 @@
 ##############################################################################
 # (a) Model: structured char only, instruments from structured char,
-#            random coefficients on [price + structured char only].
+#            random coefficients on [price only].
 ##############################################################################
 
 import pyblp
@@ -17,7 +17,6 @@ pyblp.__version__
 
 uk_product_data = pd.read_csv("uk_blp_products.csv")
 
-# Demand instruments: only structured char
 demand_instruments = pyblp.build_blp_instruments(pyblp.Formulation('1 + hpwt + mpd + space'), uk_product_data)
 
 for i, column in enumerate(demand_instruments.T):
@@ -45,10 +44,9 @@ uk_agent_data = pd.read_csv("uk_blp_agents_h4.csv")
 
 uk_agent_data.head()
 
-# Model Formulation with No Visual Char in Demand
 uk_product_formulations_with_supply = (
    pyblp.Formulation('1 + hpwt + mpd + space', absorb='C(clustering_ids)'),
-   pyblp.Formulation('1 + prices + hpwt + mpd + space'),
+   pyblp.Formulation('1 + prices'),
    pyblp.Formulation('1 + log(hpwt) + log(mpg) + log(space) + trend')
 )
 
@@ -61,17 +59,16 @@ uk_problem_with_supply = pyblp.Problem(uk_product_formulations_with_supply, uk_p
 
 uk_problem_with_supply
 
-# random coefficients (constant, price, hpwt, mpd, space)
-uk_initial_sigma = np.diag([1.5, 0, 8.5, 8.5, 8.5])
-uk_initial_pi = np.c_[[0, -14, 0, 0, 0]]
+uk_initial_sigma = np.diag([1.5, 0])
+uk_initial_pi = np.c_[[0, -14]]
 
 uk_sigma_bounds = (
         np.zeros_like(uk_initial_sigma),
-        np.diag([100, 0, 100, 100, 100])
+        np.diag([100, 0])
 )
 uk_pi_bounds = (
-        np.c_[[0, -100, 0, 0, 0]],
-        np.c_[[0, -0.1, 0, 0, 0]]
+        np.c_[[0, -100]],
+        np.c_[[0, -0.1]]
 )
 
 uk_results_with_supply = uk_problem_with_supply.solve(
@@ -88,8 +85,8 @@ uk_results_with_supply = uk_problem_with_supply.solve(
 )
 uk_results_with_supply
 
-uk_product_data.to_csv('exp_uk_product_data.csv',index=False)
-pd.DataFrame(uk_results_with_supply.xi_fe, columns = ['xi_fe']).to_csv('exp_xi_fe.csv',index=False)
+uk_product_data.to_csv('exp_uk_product_data_pricehet.csv',index=False)
+pd.DataFrame(uk_results_with_supply.xi_fe, columns = ['xi_fe']).to_csv('exp_xi_fe_pricehet.csv',index=False)
 
 instrument_results = uk_results_with_supply.compute_optimal_instruments(method='approximate')
 updated_problem = instrument_results.to_problem()
@@ -102,7 +99,7 @@ updated_results = updated_problem.solve(
 )
 updated_results
 
-pd.DataFrame(updated_results.xi_fe, columns = ['xi_fe']).to_csv('exp_opt_xi_fe.csv',index=False)
+pd.DataFrame(updated_results.xi_fe, columns = ['xi_fe']).to_csv('exp_opt_xi_fe_pricehet.csv',index=False)
 
 '''
 

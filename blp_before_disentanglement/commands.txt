@@ -1,10 +1,10 @@
-srun --pty -p gpu --gres=gpu:1 -t 10:00:00 --mem=128G bash
-srun --pty -p gpu --gres=gpu:1 -t 10:00:00 --mem=256G bash
+srun --pty -p gpu_devel --gres=gpu:1 -t 2:00:00 --mem=128G bash
+srun --pty -p gpu_devel --gres=gpu:1 -t 2:00:00 --mem=256G bash
 srun --pty -t 10:00:00 --mem=128G -p interactive bash
 
 module load miniconda
 # conda env config vars set LD_LIBRARY_PATH=/gpfs/loomis/project/karunakaran/as3465/conda_envs/as3465_1/lib:$LD_LIBRARY_PATH
-conda activate as3465_1
+# conda activate as3465_1
 conda activate for_pyblp
 module load dSQ
 export LD_LIBRARY_PATH=/gpfs/loomis/project/karunakaran/as3465/conda_envs/as3465_1/lib:$LD_LIBRARY_PATH

@@ -1,6 +1,6 @@
 library(dplyr)
 exp_uk_product_data <- read.csv('exp_uk_product_data.csv',stringsAsFactors=FALSE)
-exp_xi_fe <- read.csv('exp_xi_fe.csv',stringsAsFactors=FALSE)
+exp_xi_fe <- read.csv('exp_opt_xi_fe.csv',stringsAsFactors=FALSE)
 exp_python_image_table <- read.csv('exp_python_image_table.csv',stringsAsFactors=FALSE)
 
 exp_uk_product_data <- cbind(exp_uk_product_data,exp_xi_fe)
