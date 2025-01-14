@@ -1,1 +1,0 @@
-python main_viz.py --name hpwt_mpg_space_s5b50m20 -s 5
