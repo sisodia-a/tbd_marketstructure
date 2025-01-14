@@ -113,10 +113,10 @@ xtable(subset_stats)
 
 ```{r, warning=FALSE}
 
-filename_train <- read.csv('xife_s5b50m40_filename_train.csv', stringsAsFactors=FALSE, header=FALSE)
-filename_valid <- read.csv('xife_s5b50m40_filename_validation.csv', stringsAsFactors=FALSE, header=FALSE)
-mean_params_train <- read.csv('xife_s5b50m40_mean_params_train.csv', stringsAsFactors=FALSE, header=FALSE)
-mean_params_valid <- read.csv('xife_s5b50m40_mean_params_validation.csv', stringsAsFactors=FALSE, header=FALSE)
+filename_train <- read.csv('wb_wid_ht_s4b50m10_filename_train.csv', stringsAsFactors=FALSE, header=FALSE)
+filename_valid <- read.csv('wb_wid_ht_s4b50m10_filename_validation.csv', stringsAsFactors=FALSE, header=FALSE)
+mean_params_train <- read.csv('wb_wid_ht_s4b50m10_mean_params_train.csv', stringsAsFactors=FALSE, header=FALSE)
+mean_params_valid <- read.csv('wb_wid_ht_s4b50m10_mean_params_validation.csv', stringsAsFactors=FALSE, header=FALSE)
 
 mean_params <- rbind(mean_params_train,mean_params_valid)
 filename <- rbind(filename_train,filename_valid)
@@ -128,7 +128,7 @@ select_image_table <- read.csv('exp_selected_python_image_table.csv',stringsAsFa
 
 select_visual_att <- merge(select_image_table,visual_att)
 
-select_visual_att <- select_visual_att %>% dplyr::select(Image_name,make,model,market_ids,gen_ids,car_ids,bodyshape=V13,grille_height=V7,boxiness=V15,grille_width=V17)
+select_visual_att <- select_visual_att %>% dplyr::select(Image_name,make,model,market_ids,gen_ids,car_ids,bodyshape=V7,grille_height=V12,boxiness=V16,grille_width=V20)
 
 ```
 
