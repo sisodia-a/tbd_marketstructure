@@ -32,7 +32,7 @@ To download the dataset, please use the following link.
 
 * #### [Cars Dataset](https://www.dropbox.com/scl/fi/hzo4w80lpiuunkxn2hc5a/cars_original.npz?rlkey=7mowfp6bs3q8w95m32bkzjtzp&dl=0)
 
-Copy these files to `./one_disentanglement_hyper_selection/data/cars/`, `./three_disentanglement_hyper_selection/data/cars/`, and `./unsup_disentanglement_hyper_selection/data/cars/`.
+Copy these files to `./categorical_disentanglement_hyper_selection/data/cars/`, `./one_disentanglement_hyper_selection/data/cars/`, `./three_disentanglement_hyper_selection/data/cars/`, and `./unsup_disentanglement_hyper_selection/data/cars/`.
 
 ## Replication Steps
 
