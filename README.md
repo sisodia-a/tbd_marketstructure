@@ -186,7 +186,9 @@ Execute  `Rscript visualization_file_mds.Rmd` to produce
 
 Execute `Rscript google_trend_prep.Rmd`, and then `Rscript google_trend_makemodel.Rmd` for the google trend analysis.
 
-Execute `Rscript hj_validation_makemodel.Rmd` for validation.
+Download the validation dataset before executing `Rscript hj_validation_makemodel.Rmd` for validation
+
+[Validation Dataset](https://www.dropbox.com/scl/fo/6rgv4hmamw0n4jymhvzop/ACRljQjF7BaKTEcU4nhKYvo?rlkey=nineyb5hsm0rqc9wgeagm107l&dl=0)
 
 ## Computing Resources
 
