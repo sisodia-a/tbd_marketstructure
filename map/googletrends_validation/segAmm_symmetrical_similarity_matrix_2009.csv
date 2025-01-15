@@ -1,0 +1,10 @@
+"","Citroen C1","Fiat 500","Fiat Panda","Ford Ka","Hyundai i10","Kia Picanto","Peugeot 107","Toyota AYGO","Volkswagen up!"
+"Citroen C1",0,136,0,37,0,70,354,507,0
+"Fiat 500",136,0,390,537,0,0,0,170,0
+"Fiat Panda",0,390,0,39,35,137,0,44,0
+"Ford Ka",37,537,39,0,0,36,0,0,0
+"Hyundai i10",0,0,35,0,0,36,0,36,0
+"Kia Picanto",70,0,137,36,36,0,0,0,0
+"Peugeot 107",354,0,0,0,0,0,0,347,0
+"Toyota AYGO",507,170,44,0,36,0,347,0,36
+"Volkswagen up!",0,0,0,0,0,0,0,36,0

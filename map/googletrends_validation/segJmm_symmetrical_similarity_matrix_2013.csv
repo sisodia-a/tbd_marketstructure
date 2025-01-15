@@ -1,0 +1,17 @@
+"","Audi Q3","BMW X1","Ford Kuga","Honda CR-V","Kia Sportage","Land Rover Freelander","MINI Countryman","Nissan Juke","Nissan Qashqai","Peugeot 2008","Peugeot 3008","Renault Captur","SKODA Yeti","Vauxhall Mokka","Volkswagen Tiguan","Volvo XC60"
+"Audi Q3",0,208,43,0,38,0,0,0,12,0,0,0,0,9,0,8
+"BMW X1",208,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+"Ford Kuga",43,0,0,0,461,0,0,92,296,0,0,0,38,181,225,9
+"Honda CR-V",0,0,0,0,0,0,0,0,0,0,0,0,0,0,637,9
+"Kia Sportage",38,0,461,0,0,35,0,141,480,12,18,0,0,153,194,0
+"Land Rover Freelander",0,0,0,0,35,0,0,11,0,0,0,0,0,0,18,0
+"MINI Countryman",0,0,0,0,0,0,0,20,11,0,0,0,0,0,0,0
+"Nissan Juke",0,0,92,0,141,11,20,0,633,25,0,46,37,99,0,0
+"Nissan Qashqai",12,0,296,0,480,0,11,633,0,8,22,0,119,114,24,0
+"Peugeot 2008",0,0,0,0,12,0,0,25,8,0,252,138,20,8,0,0
+"Peugeot 3008",0,0,0,0,18,0,0,0,22,252,0,0,0,0,0,0
+"Renault Captur",0,0,0,0,0,0,0,46,0,138,0,0,11,40,0,0
+"SKODA Yeti",0,0,38,0,0,0,0,37,119,20,0,11,0,68,55,0
+"Vauxhall Mokka",9,0,181,0,153,0,0,99,114,8,0,40,68,0,53,0
+"Volkswagen Tiguan",0,0,225,637,194,18,0,0,24,0,0,0,55,53,0,0
+"Volvo XC60",8,0,9,9,0,0,0,0,0,0,0,0,0,0,0,0

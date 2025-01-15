@@ -1,0 +1,9 @@
+"","Audi A4","Audi A5","BMW 3 Series","BMW 4 Series","Ford Mondeo","Mercedes-Benz C Class","Vauxhall Insignia","Volkswagen Passat"
+"Audi A4",0,167,951,30,167,422,64,1309
+"Audi A5",167,0,62,330,0,256,0,17
+"BMW 3 Series",951,62,0,0,47,677,23,57
+"BMW 4 Series",30,330,0,0,0,79,542,0
+"Ford Mondeo",167,0,47,0,0,33,416,357
+"Mercedes-Benz C Class",422,256,677,79,33,0,15,0
+"Vauxhall Insignia",64,0,23,542,416,15,0,99
+"Volkswagen Passat",1309,17,57,0,357,0,99,0
