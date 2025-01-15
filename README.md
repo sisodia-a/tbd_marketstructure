@@ -38,7 +38,7 @@ Copy these files to `./one_disentanglement_hyper_selection/data/cars/`, `./three
 
 #### Step 1: Run BLP Demand Model
 
-1. Change directory to `./blp_before_disentanglement` and estimate the BLP demand model by executing `python pyblp_code.py`. [ **Table EC.1: Parameter Estimates of Model of Market Equilibrium** ]
+1. Change directory to `./blp_before_disentanglement` and estimate the BLP demand model by executing `python pyblp_code.py` and `pyblp_code_pricehet.py`. [ **Table EC.1: Parameter Estimates of Model of Market Equilibrium** ]
 2. Execute `Rscript helper_script.R` to produce `exp_python_image_table.csv`.
 3. Move  `exp_python_image_table.csv` to `../dataset_creation`.
 
@@ -46,7 +46,10 @@ Copy these files to `./one_disentanglement_hyper_selection/data/cars/`, `./three
 
 1. Change directory to `./dataset_creation`.
 2. Unzip `jpeg_files.zip`.
-3. Execute `python npz_file_creation.py`.
+3. Remove `rm -rf  __MACOSX/`.
+4. Move `mv jpeg_files/*jpg .`
+5. Remove `rm -rf jpeg_files`
+6. Execute `python npz_file_creation.py`.
 
 #### Step 3: Grid Search for Hyperparamaters
 
@@ -59,17 +62,47 @@ python main.py --sup_signal1 price -s 5 --name price_s5b50m20 --btcvae-B 50 --bt
 In the above command, seed, $\lambda_1$, and $\lambda_2$ is a scalar value. This codebase, specific to one supervisory signal, supports the following set of discrete supporting signals. Using any other name will result in an error.
 
 ```
+ht
+length
+width
+height
+weight
+wheelbase
 price
 xife
 ```
 
-2. Go to `./three_disentanglement_hyper_selection/` and run disentanglement model with a unique $\lambda_1$, and $\lambda_2$ with 10 different seeds. Vary $\lambda_1$, and $\lambda_2$. For example, in the below command, the seed is set to 1, $\lambda_1$=50, $\lambda_2$=20, and the supervisory signal is a comboination of hpwt, mpg and space. The model name is `hpwt_mpg_space_s5b50m20`.
+2. Go to `./categorical_disentanglement_hyper_selection` and run disentanglement model with a unique $\lambda_1$, $\lambda_2$, and supervisory signal with 10 different seeds. Vary $\lambda_1$, $\lambda_2$, and supervisory signal combination. For example, in the below command, the seed is set to 1, $\lambda_1$=50, $\lambda_2$=20, and the supervisory signal is make. The model name is `make_s5b50m20`. 
 
 ```
-python main.py -s 5 --name hpwt_mpg_space_s5b50m20 --btcvae-B 50 --btcvae-M 20
+python main.py --sup_signal1 make -s 5 --name make_s5b50m20 --btcvae-B 50 --btcvae-M 20
 ```
 
-2. Go to `./unsup_disentanglement_hyper_selection/` and run disentanglement model with a unique $\lambda_1$ with 10 different seeds. Vary $\lambda_1$ alone. For example, in the below command, the seed is set to 1, $\lambda_1$=50, $\lambda_2$=0, and the supervisory signal is a comboination of hpwt, mpg and . The model name is `hpwt_mpg_space_s5b50m20`. 
+In the above command, seed, $\lambda_1$, and $\lambda_2$ is a scalar value. This codebase, specific to one supervisory signal, supports the following set of discrete supporting signals. Using any other name will result in an error.
+
+```
+make
+color (coded for segment)
+region
+```
+
+3. Go to `./three_disentanglement_hyper_selection/` and run disentanglement model with a unique $\lambda_1$, and $\lambda_2$ with 10 different seeds. Vary $\lambda_1$, and $\lambda_2$. For example, in the below command, the seed is set to 1, $\lambda_1$=50, $\lambda_2$=20. 
+
+, and the supervisory signal is a comboination of hpwt, mpg and space. The model name is `hpwt_mpg_space_s5b50m20`.
+
+```
+python main.py -s 5 --sup_signal1 hpwt --sup_signal2 mpg --sup_signal3 space --name hpwt_mpg_space_s5b50m20 --btcvae-B 50 --btcvae-M 20
+```
+
+This codebase, specific to a combination of three supervisory signal, supports the following set of discrete supporting signals. Using any other name will result in an error.
+
+```
+hpwt_mpg_space
+length_wid_ht
+wb_wid_ht
+```
+
+4. Go to `./unsup_disentanglement_hyper_selection/` and run disentanglement model with a unique $\lambda_1$ with 10 different seeds. Vary $\lambda_1$ alone. For example, in the below command, the seed is set to 1, $\lambda_1$=50, $\lambda_2$=0.
 
 ```
 python main.py -s 5 --name unsup_s5b50m0 --btcvae-B 50 --btcvae-M 0
@@ -94,45 +127,49 @@ All the python commands will create a directory `results/<model-name>/` which wi
 
 Select the value of $\lambda_1$ and $\lambda_2$ for each supervisory signal at which the average supervised loss across 10 seeds on the test1 dataset is lowest. 
 
-1. Go to `./one_disentanglement_hyper_selection/results` and execute `./mv_script.sh`.
-2. Go to `./three_disentanglement_hyper_selection/results` and execute `./mv_script.sh`.
-3. Go to `./unsup_disentanglement_hyper_selection/results` and execute `./mv_script.sh`.
-4. Go to `./one_model_selection` and execute `cp ../one_disentanglement_hyper_selection/results/*/*csv`.
-5. Go to `./three_model_selection` and execute `cp ../three_disentanglement_hyper_selection/results/*/*csv`.
-6. Go to `./unsup_model_selection` and execute `cp ../unsup_disentanglement_hyper_selection/results/*/*csv`.
-7. Go to `./one_model_selection` and execute `Rscript val_loss.R price` and `Rscript val_loss.R xife` to find the optimal hyperparameters for a particular supervisory signal.
-8. Go to `./three_model_selection` and execute `Rscript val_loss.R hpwt_mpg_space` to find the optimal hyperparameters for a particular supervisory signal.
-9. Go to `./one_model_selection` and execute `Rscript r_script_all.R price` and `Rscript r_script_all.R xife`.
-10. Go to `./three_model_selection` and execute `Rscript r_script_all.R hpwt_mpg_space`.
-11. Go to `./unsup_model_selection` and execute `Rscript r_script_all.R unsup`, `Rscript r_script_all.R vae`, and `Rscript r_script_all.R ae`.
-12. Calculate UDR corresponding to make-model fixed effects by executing `Rscript udr_calculation.R xife` from the `one_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
-13. Calculate UDR corresponding to price by executing `Rscript udr_calculation.R price` from the `one_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
-14. Calculate UDR corresponding to hpwt, mpg and space by executing `Rscript udr_calculation.R hpwt_mpg_space` from the `three_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
-15. Calculate UDR corresponding to the unsupervised $\beta$-TCVAE by executing `Rscript udr_calculation.R unsup` from the `unsup_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
-16. Calculate UDR corresponding to plain-vanilla VAE by executing `Rscript udr_calculation.R vae` from the `unsup_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
-17. Calculate UDR corresponding to plain-vanilla AE by executing `Rscript udr_calculation.R ae` from the `unsup_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
+1. Go to `./categorical_model_selection/results` and execute `./mv_script.sh`.
+2. Go to `./one_disentanglement_hyper_selection/results` and execute `./mv_script.sh`.
+3. Go to `./three_disentanglement_hyper_selection/results` and execute `./mv_script.sh`.
+4. Go to `./unsup_disentanglement_hyper_selection/results` and execute `./mv_script.sh`.
+5. Go to `./categorical_model_selection` and execute `cp ../categorical_disentanglement_hyper_selection/results/*/*csv .`.
+6. Go to `./one_model_selection` and execute `cp ../one_disentanglement_hyper_selection/results/*/*csv .`.
+7. Go to `./three_model_selection` and execute `cp ../three_disentanglement_hyper_selection/results/*/*csv .`.
+8. Go to `./unsup_model_selection` and execute `cp ../unsup_disentanglement_hyper_selection/results/*/*csv .`.
+9. Go to `./categorical_model_selection` and execute `Rscript val_loss.R make`, `Rscript val_loss.R color`, and `Rscript val_loss.R region` to find the optimal hyperparameters for a particular supervisory signal.
+10. Go to `./one_model_selection` and execute `Rscript val_loss.R ht`, `Rscript val_loss.R length`, `Rscript val_loss.R price`, `Rscript val_loss.R wb`, `Rscript val_loss.R wid`, `Rscript val_loss.R wt`, and `Rscript val_loss.R xife` to find the optimal hyperparameters for a particular supervisory signal.
+11. Go to `./three_model_selection` and execute `Rscript val_loss.R hpwt_mpg_space`, `Rscript val_loss.R length_wid_ht`, and `Rscript val_loss.R wb_wid_ht` to find the optimal hyperparameters for a particular supervisory signal.
+13. Go to `./categorical_model_selection` and execute `Rscript val_loss.R make`, `Rscript val_loss.R color`, and `Rscript val_loss.R region` to find the optimal hyperparameters for a particular supervisory signal.
+14. Go to `./one_model_selection` and execute `Rscript r_script_ht.R ht`, `Rscript r_script_len.R length`, `Rscript r_script_price.R price`, `Rscript r_script_wb.R wb`, `Rscript r_script_wid.R wid`, `Rscript r_script_wt.R wt` and `Rscript r_script_xife.R xife`.
+15. Go to `./three_model_selection` and execute `Rscript r_script_hpwt_mpg_space.R hpwt_mpg_space`, `Rscript r_script_length_wid_ht.R length_wid_ht`, and `Rscript r_script_wb_wid_ht.R wb_wid_ht`.
+16. Go to `./unsup_model_selection` and execute `Rscript r_script_unsup.R unsup`, `Rscript r_script_vae.R vae`, and `Rscript r_script_ae.R ae`.
+17. Calculate UDR corresponding to single signal (categorical) by executing `Rscript udr_calculation_make.R make`, `Rscript udr_calculation_color.R color`, and `Rscript udr_calculation_region.R region` from the `categorical_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
+18. Calculate UDR corresponding to single signal (continuous) by executing `Rscript udr_calculation_ht.R ht`, `Rscript udr_calculation_len.R length`, `Rscript udr_calculation_price.R price`, `Rscript udr_calculation_wb.R wb`, `Rscript udr_calculation_wid.R wid`, `Rscript udr_calculation_wt.R wt`, and `Rscript udr_calculation_xife.R xife` from the `one_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
+19. Calculate UDR corresponding to three signal combinations by executing `Rscript udr_calculation_hpwt_mpg_space.R hpwt_mpg_space`, `Rscript udr_calculation_length_wid_ht.R length_wid_ht`, and `Rscript udr_calculation_wb_wid_ht.R wb_wid_ht` from the `three_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
+20. Calculate UDR corresponding to the unsupervised $\beta$-TCVAE by executing `Rscript udr_calculation_unsup.R unsup` from the `unsup_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
+21. Calculate UDR corresponding to plain-vanilla VAE by executing `Rscript udr_calculation_vae.R vae` from the `unsup_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
+22. Calculate UDR corresponding to plain-vanilla AE by executing `Rscript udr_calculation_ae.R ae` from the `unsup_model_selection` directory. [ **Table 7: Comparison of Different Supervisory Approaches in the paper** ]
 
 #### Step 4: Posterior Traversal Generation
 
-1. Execute the following commands from `one_disentanglement_hyper_selection`. 
+1. Execute the following commands from `three_disentanglement_hyper_selection`. 
 ```
-python main_viz.py --name xife_s5b50m40 -s 5
+python main_viz.py --name wb_wid_ht_s4b50m10 -s 4
 ```
 
-This will produce `./one_disentanglement_hyper_selection/results/xife_s5b50m40/xife_s5b50m40_reconstruct_traverse.png`. [ **Figure 4 in the paper** ]
+This will produce `./three_disentanglement_hyper_selection/results/wb_wid_ht_s4b50m10/wb_wid_ht_s4b50m10_33_reconstruct_traverse.png`. [ **Figure 4 in the paper** ]
 
 2. Execute the following commands from `unsup_disentanglement_hyper_selection`.
    
 ```
-python main_viz.py --name ae_s5 -s 5
-python main_viz.py --name vae_s5 -s 5
-python main_viz.py --name unsup_s5b50m0 -s 5
+python main_viz.py --name unsup_s4b50m0 -s 4
+python main_viz.py --name vae_s4 -s 4
+python main_viz.py --name ae_s4 -s 4
 ```
 
 This will produce:
-1. `./unsup_disentanglement_hyper_selection/results/ae_s5/ae_s5_reconstruct_traverse.png` [ **Figure EC.1 in the paper** ]
-2. `./unsup_disentanglement_hyper_selection/results/vae_s5/vae_s5_reconstruct_traverse.png` [ **Figure EC.2 in the paper** ]
-3. `./unsup_disentanglement_hyper_selection/results/unsup_s5b50m0/unsup_s5b50m0_reconstruct_traverse.png` [ **Figure EC.3 in the paper** ]
+1. `./unsup_disentanglement_hyper_selection/results/ae_s4/ae_s4_33_reconstruct_traverse.png` [ **Figure EC.1 in the paper** ]
+2. `./unsup_disentanglement_hyper_selection/results/vae_s4/vae_s4_33_reconstruct_traverse.png` [ **Figure EC.2 in the paper** ]
+3. `./unsup_disentanglement_hyper_selection/results/unsup_s4b50m0/unsup_s4b50m0_33_reconstruct_traverse.png` [ **Figure EC.3 in the paper** ]
 
 #### Step 5: Market Structure Maps
 
