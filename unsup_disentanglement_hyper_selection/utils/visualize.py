@@ -327,27 +327,27 @@ class Visualizer():
         """
         n_latents = n_latents if n_latents is not None else self.model.latent_dim
 
-        i = 2
-        traversals = self.traversals(data=data[i:i+1, ...] if is_posterior else None,is_reorder_latents=True,n_per_latent=n_per_latent,n_latents=n_latents,is_force_return=True)
-        traversals = Image.fromarray(traversals)
-        if is_show_text:
-            losses = sorted(self.losses, reverse=True)[:n_latents]
-            labels = ["KL={:.4f}".format(l) for l in losses]
-            traversals = add_labels(traversals, labels)
+#        i = 2
+#        traversals = self.traversals(data=data[i:i+1, ...] if is_posterior else None,is_reorder_latents=True,n_per_latent=n_per_latent,n_latents=n_latents,is_force_return=True)
+#        traversals = Image.fromarray(traversals)
+#        if is_show_text:
+#            losses = sorted(self.losses, reverse=True)[:n_latents]
+#            labels = ["KL={:.4f}".format(l) for l in losses]
+#            traversals = add_labels(traversals, labels)
 
-            filename = os.path.join(self.model_dir, self.experiment_name + '_' + PLOT_NAMES["reconstruct_traverse"])
-            traversals.save(filename)
+#            filename = os.path.join(self.model_dir, self.experiment_name + '_' + PLOT_NAMES["reconstruct_traverse"])
+#            traversals.save(filename)
 
-#        for i in range(10):
-#            traversals = self.traversals(data=data[i:i+1, ...] if is_posterior else None,is_reorder_latents=True,n_per_latent=n_per_latent,n_latents=n_latents,is_force_return=True)
-#            traversals = Image.fromarray(traversals)
-#            if is_show_text:
-#                losses = sorted(self.losses, reverse=True)[:n_latents]
-#                labels = ["KL={:.4f}".format(l) for l in losses]
-#                traversals = add_labels(traversals, labels)
-#       
-#                filename = os.path.join(self.model_dir, self.experiment_name + '_' + str(i) + '_' + PLOT_NAMES["reconstruct_traverse"])
-#                traversals.save(filename)
+        for i in range(100):
+            traversals = self.traversals(data=data[i:i+1, ...] if is_posterior else None,is_reorder_latents=True,n_per_latent=n_per_latent,n_latents=n_latents,is_force_return=True)
+            traversals = Image.fromarray(traversals)
+            if is_show_text:
+                losses = sorted(self.losses, reverse=True)[:n_latents]
+                labels = ["KL={:.4f}".format(l) for l in losses]
+                traversals = add_labels(traversals, labels)
+
+                filename = os.path.join(self.model_dir, self.experiment_name + '_' + str(i) + '_' + PLOT_NAMES["reconstruct_traverse"])
+                traversals.save(filename)
 
     def gif_traversals(self, data, n_latents=None, n_per_gif=15):
         """Generates a grid of gifs of latent posterior traversals where the rows
