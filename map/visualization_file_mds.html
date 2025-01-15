@@ -1746,89 +1746,127 @@ uk_product_data$demand_instruments7 &lt;- NULL
 uk_product_data$Domestic &lt;- ifelse(uk_product_data$region==&quot;United Kingdom&quot;,1,0)
 uk_product_data$France &lt;- ifelse(uk_product_data$region==&quot;France&quot;,1,0)
 uk_product_data$Germany &lt;- ifelse(uk_product_data$region==&quot;Germany&quot;,1,0)
+uk_product_data$Italy &lt;- ifelse(uk_product_data$region==&quot;Italy&quot;,1,0)
 uk_product_data$Japan &lt;- ifelse(uk_product_data$region==&quot;Japan&quot;,1,0)
 uk_product_data$Korea &lt;- ifelse(uk_product_data$region==&quot;South Korea&quot;,1,0)
+uk_product_data$Sweden &lt;- ifelse(uk_product_data$region==&quot;Sweden&quot;,1,0)
 uk_product_data$USA &lt;- ifelse(uk_product_data$region==&quot;United States&quot;,1,0)
+uk_product_data$Others &lt;- ifelse(uk_product_data$region==&quot;Malaysia&quot; | uk_product_data$region==&quot;Romania&quot; | uk_product_data$region==&quot;Spain&quot; | uk_product_data$region==&quot;Czech&quot;,1,0)
 
-summary_stats &lt;- uk_product_data %&gt;% group_by(market_ids) %&gt;% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*shares)/sum(shares),hp=sum(hp*shares),weight=sum(wt*shares),hpwt=sum(hpwt*shares)/sum(shares),mpg=sum(mpg*shares)/sum(shares),length=sum(len*shares),width=sum(wid*shares),height=sum(ht*shares),wheelbase=sum(wb*shares),space=sum(space*shares)/sum(shares))
+temp &lt;- uk_product_data
 
-temp &lt;- uk_product_data %&gt;% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*shares)/sum(shares),hp=sum(hp*shares),weight=sum(wt*shares),hpwt=sum(hpwt*shares)/sum(shares),mpg=sum(mpg*shares)/sum(shares),length=sum(len*shares),width=sum(wid*shares),height=sum(ht*shares),wheelbase=sum(wb*shares),space=sum(space*shares)/sum(shares))
+temp$Segment_A &lt;- ifelse(temp$Segment==1,1,0)
+temp$Segment_B &lt;- ifelse(temp$Segment==2,1,0)
+temp$Segment_C &lt;- ifelse(temp$Segment==3,1,0)
+temp$Segment_D &lt;- ifelse(temp$Segment==4,1,0)
+temp$Segment_E &lt;- ifelse(temp$Segment==5,1,0)
+temp$Segment_J &lt;- ifelse(temp$Segment==7,1,0)
+temp$Segment_M &lt;- ifelse(temp$Segment==8,1,0)
 
-temp &lt;- cbind(&quot;All&quot;,temp)
-names(temp)[1] &lt;- &quot;market_ids&quot;
+temp$len &lt;- temp$len * 0.393701/1000
+temp$wid &lt;- temp$wid * 0.393701/1000
+temp$wb &lt;- temp$wb * 0.393701/1000
+temp$ht &lt;- temp$ht * 0.393701/1000
 
-summary_stats &lt;- rbind(summary_stats,temp)
 
-rm(temp)
+temp$clustering_ids &lt;- NULL
+temp$car_ids &lt;- NULL
+temp$firm_ids &lt;- NULL
+temp$make &lt;- NULL
+temp$model &lt;- NULL
+temp$shares &lt;- NULL
+temp$trend &lt;- NULL
+temp$ULSP &lt;- NULL
+temp$ULSD &lt;- NULL
+temp$CPI &lt;- NULL
+temp$Segment &lt;- NULL
+temp$Segment_Desc &lt;- NULL
+temp$low_share &lt;- NULL
+temp$count &lt;- NULL
+temp$region &lt;- NULL
+temp$market_ids &lt;- NULL
 
-uk_product_data$Domestic &lt;- NULL
-uk_product_data$France &lt;- NULL
-uk_product_data$Germany &lt;- NULL
-uk_product_data$Japan &lt;- NULL
-uk_product_data$Korea &lt;- NULL
-uk_product_data$USA &lt;- NULL
-
-summary_stats$Quantity &lt;- summary_stats$Quantity/1000
-summary_stats[,3:13] &lt;- round(summary_stats[,3:13],3)
-print(summary_stats %&gt;% as.data.frame())</code></pre>
-<pre><code>##    market_ids models Quantity  price      hp  weight  hpwt   mpg   length
-## 1        2008    233    6.158 21.398  22.057  51.926 0.416 4.578  755.769
-## 2        2009    247    6.169 21.089  22.523  53.675 0.411 4.838  790.236
-## 3        2010    243    6.655 21.584  24.220  57.262 0.414 5.022  837.120
-## 4        2011    231    6.876 21.784  24.447  57.023 0.421 5.183  822.509
-## 5        2012    244    7.028 21.533  26.099  60.753 0.422 5.422  879.164
-## 6        2013    241    8.075 21.351  29.417  68.369 0.423 5.573  996.235
-## 7        2014    251    8.608 21.697  33.128  75.552 0.431 5.702 1106.803
-## 8        2015    251    9.148 22.754  35.919  79.456 0.443 5.787 1166.868
-## 9        2016    253    9.225 24.067  37.929  81.234 0.457 5.692 1190.180
-## 10       2017    245    8.687 24.834  35.589  74.874 0.465 5.502 1086.887
-## 11        All   2439    7.685 22.336 291.328 660.124 0.433 5.385 9631.772
-##       width   height wheelbase space
-## 1   338.764  269.617   464.667 1.245
-## 2   355.877  284.556   486.675 1.229
-## 3   378.222  300.530   514.433 1.247
-## 4   370.867  293.594   503.718 1.261
-## 5   398.689  314.438   539.031 1.264
-## 6   453.347  356.566   610.994 1.268
-## 7   504.149  394.722   678.011 1.277
-## 8   532.900  414.526   714.142 1.290
-## 9   544.053  422.119   727.191 1.305
-## 10  495.917  384.019   663.295 1.318
-## 11 4372.784 3434.687  5902.158 1.274</code></pre>
-<pre class="r"><code># Table 6: Descriptive Statistics of Structured Data
-subset_stats &lt;- summary_stats[, c(1:4, 5:13)] %&gt;% as.data.frame()
-names(subset_stats) &lt;- c(&quot;Market&quot;,&quot;No. of Observations&quot;,&quot;Quantity&quot;,&quot;Price&quot;,&quot;HP&quot;,&quot;Weight&quot;,&quot;HP/Wt&quot;,&quot;MPG&quot;,&quot;Length&quot;,&quot;Width&quot;,&quot;Height&quot;,&quot;Wheelbase&quot;,&quot;Space&quot;)
-print(subset_stats)</code></pre>
-<pre><code>##    Market No. of Observations Quantity  Price      HP  Weight HP/Wt   MPG
-## 1    2008                 233    6.158 21.398  22.057  51.926 0.416 4.578
-## 2    2009                 247    6.169 21.089  22.523  53.675 0.411 4.838
-## 3    2010                 243    6.655 21.584  24.220  57.262 0.414 5.022
-## 4    2011                 231    6.876 21.784  24.447  57.023 0.421 5.183
-## 5    2012                 244    7.028 21.533  26.099  60.753 0.422 5.422
-## 6    2013                 241    8.075 21.351  29.417  68.369 0.423 5.573
-## 7    2014                 251    8.608 21.697  33.128  75.552 0.431 5.702
-## 8    2015                 251    9.148 22.754  35.919  79.456 0.443 5.787
-## 9    2016                 253    9.225 24.067  37.929  81.234 0.457 5.692
-## 10   2017                 245    8.687 24.834  35.589  74.874 0.465 5.502
-## 11    All                2439    7.685 22.336 291.328 660.124 0.433 5.385
-##      Length    Width   Height Wheelbase Space
-## 1   755.769  338.764  269.617   464.667 1.245
-## 2   790.236  355.877  284.556   486.675 1.229
-## 3   837.120  378.222  300.530   514.433 1.247
-## 4   822.509  370.867  293.594   503.718 1.261
-## 5   879.164  398.689  314.438   539.031 1.264
-## 6   996.235  453.347  356.566   610.994 1.268
-## 7  1106.803  504.149  394.722   678.011 1.277
-## 8  1166.868  532.900  414.526   714.142 1.290
-## 9  1190.180  544.053  422.119   727.191 1.305
-## 10 1086.887  495.917  384.019   663.295 1.318
-## 11 9631.772 4372.784 3434.687  5902.158 1.274</code></pre>
-<pre class="r"><code>xtable(subset_stats)</code></pre>
-<div data-pagedtable="false">
-<script data-pagedtable-source type="application/json">
-{"columns":[{"label":["Market"],"name":[1],"type":["chr"],"align":["left"]},{"label":["No. of Observations"],"name":[2],"type":["int"],"align":["right"]},{"label":["Quantity"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["Price"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["HP"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["Weight"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["HP/Wt"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["MPG"],"name":[8],"type":["dbl"],"align":["right"]},{"label":["Length"],"name":[9],"type":["dbl"],"align":["right"]},{"label":["Width"],"name":[10],"type":["dbl"],"align":["right"]},{"label":["Height"],"name":[11],"type":["dbl"],"align":["right"]},{"label":["Wheelbase"],"name":[12],"type":["dbl"],"align":["right"]},{"label":["Space"],"name":[13],"type":["dbl"],"align":["right"]}],"data":[{"1":"2008","2":"233","3":"6.158","4":"21.398","5":"22.057","6":"51.926","7":"0.416","8":"4.578","9":"755.769","10":"338.764","11":"269.617","12":"464.667","13":"1.245"},{"1":"2009","2":"247","3":"6.169","4":"21.089","5":"22.523","6":"53.675","7":"0.411","8":"4.838","9":"790.236","10":"355.877","11":"284.556","12":"486.675","13":"1.229"},{"1":"2010","2":"243","3":"6.655","4":"21.584","5":"24.220","6":"57.262","7":"0.414","8":"5.022","9":"837.120","10":"378.222","11":"300.530","12":"514.433","13":"1.247"},{"1":"2011","2":"231","3":"6.876","4":"21.784","5":"24.447","6":"57.023","7":"0.421","8":"5.183","9":"822.509","10":"370.867","11":"293.594","12":"503.718","13":"1.261"},{"1":"2012","2":"244","3":"7.028","4":"21.533","5":"26.099","6":"60.753","7":"0.422","8":"5.422","9":"879.164","10":"398.689","11":"314.438","12":"539.031","13":"1.264"},{"1":"2013","2":"241","3":"8.075","4":"21.351","5":"29.417","6":"68.369","7":"0.423","8":"5.573","9":"996.235","10":"453.347","11":"356.566","12":"610.994","13":"1.268"},{"1":"2014","2":"251","3":"8.608","4":"21.697","5":"33.128","6":"75.552","7":"0.431","8":"5.702","9":"1106.803","10":"504.149","11":"394.722","12":"678.011","13":"1.277"},{"1":"2015","2":"251","3":"9.148","4":"22.754","5":"35.919","6":"79.456","7":"0.443","8":"5.787","9":"1166.868","10":"532.900","11":"414.526","12":"714.142","13":"1.290"},{"1":"2016","2":"253","3":"9.225","4":"24.067","5":"37.929","6":"81.234","7":"0.457","8":"5.692","9":"1190.180","10":"544.053","11":"422.119","12":"727.191","13":"1.305"},{"1":"2017","2":"245","3":"8.687","4":"24.834","5":"35.589","6":"74.874","7":"0.465","8":"5.502","9":"1086.887","10":"495.917","11":"384.019","12":"663.295","13":"1.318"},{"1":"All","2":"2439","3":"7.685","4":"22.336","5":"291.328","6":"660.124","7":"0.433","8":"5.385","9":"9631.772","10":"4372.784","11":"3434.687","12":"5902.158","13":"1.274"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
-  </script>
-</div>
+stargazer(temp, summary = TRUE, summary.stat = c(&quot;mean&quot;, &quot;sd&quot;, &quot;min&quot;, &quot;max&quot;))</code></pre>
+<pre><code>## 
+## % Table created by stargazer v.5.2.3 by Marek Hlavac, Social Policy Institute. E-mail: marek.hlavac at gmail.com
+## % Date and time: Wed, Jan 15, 2025 - 10:54:35
+## \begin{table}[!htbp] \centering 
+##   \caption{} 
+##   \label{} 
+## \begin{tabular}{@{\extracolsep{5pt}}lcccc} 
+## \\[-1.8ex]\hline 
+## \hline \\[-1.8ex] 
+## Statistic &amp; \multicolumn{1}{c}{Mean} &amp; \multicolumn{1}{c}{St. Dev.} &amp; \multicolumn{1}{c}{Min} &amp; \multicolumn{1}{c}{Max} \\ 
+## \hline \\[-1.8ex] 
+## quantity &amp; 7,685.082 &amp; 12,965.190 &amp; 1 &amp; 125,619 \\ 
+## prices &amp; 27.313 &amp; 15.457 &amp; 6.413 &amp; 166.652 \\ 
+## mpg &amp; 4.761 &amp; 1.117 &amp; 1.600 &amp; 13.652 \\ 
+## hp &amp; 158.002 &amp; 85.030 &amp; 5.000 &amp; 574.000 \\ 
+## wt &amp; 327.691 &amp; 83.806 &amp; 83.776 &amp; 628.317 \\ 
+## len &amp; 1.730 &amp; 0.175 &amp; 1.061 &amp; 2.054 \\ 
+## wid &amp; 0.756 &amp; 0.065 &amp; 0.559 &amp; 0.904 \\ 
+## ht &amp; 0.618 &amp; 0.055 &amp; 0.490 &amp; 0.800 \\ 
+## wb &amp; 1.049 &amp; 0.079 &amp; 0.735 &amp; 1.305 \\ 
+## Doors &amp; 4.536 &amp; 0.745 &amp; 2.000 &amp; 6.000 \\ 
+## Seats &amp; 5.114 &amp; 0.874 &amp; 2.000 &amp; 9.000 \\ 
+## hpwt &amp; 0.466 &amp; 0.169 &amp; 0.060 &amp; 1.382 \\ 
+## space &amp; 1.315 &amp; 0.216 &amp; 0.662 &amp; 1.790 \\ 
+## mpd &amp; 0.831 &amp; 0.224 &amp; 0.266 &amp; 2.612 \\ 
+## Domestic &amp; 0.101 &amp; 0.301 &amp; 0 &amp; 1 \\ 
+## France &amp; 0.122 &amp; 0.328 &amp; 0 &amp; 1 \\ 
+## Germany &amp; 0.241 &amp; 0.428 &amp; 0 &amp; 1 \\ 
+## Italy &amp; 0.058 &amp; 0.233 &amp; 0 &amp; 1 \\ 
+## Japan &amp; 0.221 &amp; 0.415 &amp; 0 &amp; 1 \\ 
+## Korea &amp; 0.095 &amp; 0.293 &amp; 0 &amp; 1 \\ 
+## Sweden &amp; 0.041 &amp; 0.199 &amp; 0 &amp; 1 \\ 
+## USA &amp; 0.056 &amp; 0.230 &amp; 0 &amp; 1 \\ 
+## Others &amp; 0.065 &amp; 0.247 &amp; 0 &amp; 1 \\ 
+## Segment\_A &amp; 0.095 &amp; 0.293 &amp; 0 &amp; 1 \\ 
+## Segment\_B &amp; 0.123 &amp; 0.329 &amp; 0 &amp; 1 \\ 
+## Segment\_C &amp; 0.159 &amp; 0.365 &amp; 0 &amp; 1 \\ 
+## Segment\_D &amp; 0.128 &amp; 0.334 &amp; 0 &amp; 1 \\ 
+## Segment\_E &amp; 0.075 &amp; 0.263 &amp; 0 &amp; 1 \\ 
+## Segment\_J &amp; 0.251 &amp; 0.434 &amp; 0 &amp; 1 \\ 
+## Segment\_M &amp; 0.170 &amp; 0.375 &amp; 0 &amp; 1 \\ 
+## \hline \\[-1.8ex] 
+## \end{tabular} 
+## \end{table}</code></pre>
+<pre class="r"><code>stargazer(temp, summary = TRUE, summary.stat = c(&quot;mean&quot;, &quot;sd&quot;, &quot;min&quot;, &quot;max&quot;), type = &quot;text&quot;)</code></pre>
+<pre><code>## 
+## =============================================
+## Statistic   Mean     St. Dev.   Min     Max  
+## ---------------------------------------------
+## quantity  7,685.082 12,965.190   1    125,619
+## prices     27.313     15.457   6.413  166.652
+## mpg         4.761     1.117    1.600  13.652 
+## hp         158.002    85.030   5.000  574.000
+## wt         327.691    83.806   83.776 628.317
+## len         1.730     0.175    1.061   2.054 
+## wid         0.756     0.065    0.559   0.904 
+## ht          0.618     0.055    0.490   0.800 
+## wb          1.049     0.079    0.735   1.305 
+## Doors       4.536     0.745    2.000   6.000 
+## Seats       5.114     0.874    2.000   9.000 
+## hpwt        0.466     0.169    0.060   1.382 
+## space       1.315     0.216    0.662   1.790 
+## mpd         0.831     0.224    0.266   2.612 
+## Domestic    0.101     0.301      0       1   
+## France      0.122     0.328      0       1   
+## Germany     0.241     0.428      0       1   
+## Italy       0.058     0.233      0       1   
+## Japan       0.221     0.415      0       1   
+## Korea       0.095     0.293      0       1   
+## Sweden      0.041     0.199      0       1   
+## USA         0.056     0.230      0       1   
+## Others      0.065     0.247      0       1   
+## Segment_A   0.095     0.293      0       1   
+## Segment_B   0.123     0.329      0       1   
+## Segment_C   0.159     0.365      0       1   
+## Segment_D   0.128     0.334      0       1   
+## Segment_E   0.075     0.263      0       1   
+## Segment_J   0.251     0.434      0       1   
+## Segment_M   0.170     0.375      0       1   
+## ---------------------------------------------</code></pre>
 </div>
 <div id="reading-structured-data-visual-blp-paper" class="section level2">
 <h2>Reading Structured Data (Visual BLP Paper)</h2>
@@ -1863,13 +1901,20 @@ uk_product_data$demand_instruments7 &lt;- NULL
 uk_product_data$Domestic &lt;- ifelse(uk_product_data$region==&quot;United Kingdom&quot;,1,0)
 uk_product_data$France &lt;- ifelse(uk_product_data$region==&quot;France&quot;,1,0)
 uk_product_data$Germany &lt;- ifelse(uk_product_data$region==&quot;Germany&quot;,1,0)
+uk_product_data$Italy &lt;- ifelse(uk_product_data$region==&quot;Italy&quot;,1,0)
 uk_product_data$Japan &lt;- ifelse(uk_product_data$region==&quot;Japan&quot;,1,0)
 uk_product_data$Korea &lt;- ifelse(uk_product_data$region==&quot;South Korea&quot;,1,0)
+uk_product_data$Sweden &lt;- ifelse(uk_product_data$region==&quot;Sweden&quot;,1,0)
 uk_product_data$USA &lt;- ifelse(uk_product_data$region==&quot;United States&quot;,1,0)
+uk_product_data$Others &lt;- ifelse(uk_product_data$region==&quot;Malaysia&quot; | uk_product_data$region==&quot;Romania&quot; | uk_product_data$region==&quot;Spain&quot; | uk_product_data$region==&quot;Czech&quot;,1,0)
 
-summary_stats &lt;- uk_product_data %&gt;% group_by(market_ids) %&gt;% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*shares)/sum(shares),Domestic=sum(Domestic*shares)/sum(shares),France=sum(France*shares)/sum(shares),Germany=sum(Germany*shares)/sum(shares),Japan=sum(Japan*shares)/sum(shares),Korea=sum(Korea*shares)/sum(shares),USA=sum(USA*shares)/sum(shares),hpwt=sum(hpwt*shares)/sum(shares),space=sum(space*shares)/sum(shares),mpg=sum(mpg*shares)/sum(shares),mpd=sum(mpd*shares)/sum(shares))
+# summary_stats &lt;- uk_product_data %&gt;% group_by(market_ids) %&gt;% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*shares)/sum(shares),hpwt=sum(hpwt*shares)/sum(shares),mpg=sum(mpg*shares)/sum(shares),space=sum(space*shares)/sum(shares))
+# 
+# temp &lt;- uk_product_data %&gt;% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*quantity)/sum(quantity),hpwt=sum(hpwt*quantity)/sum(quantity),mpg=sum(mpg*quantity)/sum(quantity),space=sum(space*quantity)/sum(quantity))
 
-temp &lt;- uk_product_data %&gt;% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*quantity)/sum(quantity),Domestic=sum(Domestic*quantity)/sum(quantity),France=sum(France*quantity)/sum(quantity),Germany=sum(Germany*quantity)/sum(quantity),Japan=sum(Japan*quantity)/sum(quantity),Korea=sum(Korea*quantity)/sum(quantity),USA=sum(USA*quantity)/sum(quantity),hpwt=sum(hpwt*quantity)/sum(quantity),space=sum(space*quantity)/sum(quantity),mpg=sum(mpg*quantity)/sum(quantity),mpd=sum(mpd*quantity)/sum(quantity))
+summary_stats &lt;- uk_product_data %&gt;% group_by(market_ids) %&gt;% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*shares)/sum(shares),Domestic=sum(Domestic*shares)/sum(shares),France=sum(France*shares)/sum(shares),Germany=sum(Germany*shares)/sum(shares),Italy=sum(Italy*shares)/sum(shares),Japan=sum(Japan*shares)/sum(shares),Korea=sum(Korea*shares)/sum(shares),Sweden=sum(Sweden*shares)/sum(shares),USA=sum(USA*shares)/sum(shares),hpwt=sum(hpwt*shares)/sum(shares),space=sum(space*shares)/sum(shares),mpg=sum(mpg*shares)/sum(shares),mpd=sum(mpd*shares)/sum(shares))
+
+temp &lt;- uk_product_data %&gt;% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*quantity)/sum(quantity),Domestic=sum(Domestic*quantity)/sum(quantity),France=sum(France*quantity)/sum(quantity),Germany=sum(Germany*quantity)/sum(quantity),Italy=sum(Italy*quantity)/sum(quantity),Japan=sum(Japan*quantity)/sum(quantity),Korea=sum(Korea*quantity)/sum(quantity),Sweden=sum(Sweden*quantity)/sum(quantity),USA=sum(USA*quantity)/sum(quantity),hpwt=sum(hpwt*quantity)/sum(quantity),space=sum(space*quantity)/sum(quantity),mpg=sum(mpg*quantity)/sum(quantity),mpd=sum(mpd*quantity)/sum(quantity))
 
 temp &lt;- cbind(&quot;All&quot;,temp)
 names(temp)[1] &lt;- &quot;market_ids&quot;
@@ -1881,69 +1926,60 @@ rm(temp)
 uk_product_data$Domestic &lt;- NULL
 uk_product_data$France &lt;- NULL
 uk_product_data$Germany &lt;- NULL
+uk_product_data$Italy &lt;- NULL
 uk_product_data$Japan &lt;- NULL
 uk_product_data$Korea &lt;- NULL
+uk_product_data$Sweden &lt;- NULL
 uk_product_data$USA &lt;- NULL
+uk_product_data$Others &lt;- NULL
 
 summary_stats$Quantity &lt;- summary_stats$Quantity/1000
-summary_stats[,3:14] &lt;- round(summary_stats[,3:14],3)
+summary_stats[,3:16] &lt;- round(summary_stats[,3:16],3)
 print(summary_stats %&gt;% as.data.frame())</code></pre>
-<pre><code>##    market_ids models Quantity  price Domestic France Germany Japan Korea   USA
-## 1        2008    233    6.158 21.398    0.309  0.132   0.243 0.193 0.028 0.011
-## 2        2009    247    6.169 21.089    0.298  0.119   0.230 0.190 0.058 0.012
-## 3        2010    243    6.655 21.584    0.284  0.138   0.243 0.172 0.062 0.009
-## 4        2011    231    6.876 21.784    0.284  0.119   0.271 0.161 0.064 0.008
-## 5        2012    244    7.028 21.533    0.278  0.106   0.277 0.163 0.072 0.009
-## 6        2013    241    8.075 21.351    0.278  0.103   0.275 0.162 0.068 0.007
-## 7        2014    251    8.608 21.697    0.265  0.104   0.280 0.165 0.068 0.004
-## 8        2015    251    9.148 22.754    0.253  0.105   0.293 0.169 0.068 0.004
-## 9        2016    253    9.225 24.067    0.240  0.102   0.303 0.169 0.073 0.006
-## 10       2017    245    8.687 24.834    0.219  0.088   0.328 0.174 0.080 0.003
-## 11        All   2439    7.685 22.352    0.267  0.110   0.278 0.171 0.066 0.007
-##     hpwt space   mpg   mpd
-## 1  0.416 1.245 4.578 0.760
-## 2  0.411 1.229 4.838 0.905
-## 3  0.414 1.247 5.022 0.837
-## 4  0.421 1.261 5.183 0.782
-## 5  0.422 1.264 5.422 0.825
-## 6  0.423 1.268 5.573 0.878
-## 7  0.431 1.277 5.702 0.962
-## 8  0.443 1.290 5.787 1.126
-## 9  0.457 1.305 5.692 1.149
-## 10 0.465 1.318 5.502 1.053
-## 11 0.433 1.274 5.391 0.948</code></pre>
+<pre><code>##    market_ids models Quantity  price Domestic France Germany Italy Japan Korea
+## 1        2008    233    6.158 21.398    0.309  0.132   0.243 0.028 0.193 0.028
+## 2        2009    247    6.169 21.089    0.298  0.119   0.230 0.037 0.190 0.058
+## 3        2010    243    6.655 21.584    0.284  0.138   0.243 0.033 0.172 0.062
+## 4        2011    231    6.876 21.784    0.284  0.119   0.271 0.030 0.161 0.064
+## 5        2012    244    7.028 21.533    0.278  0.106   0.277 0.030 0.163 0.072
+## 6        2013    241    8.075 21.351    0.278  0.103   0.275 0.031 0.162 0.068
+## 7        2014    251    8.608 21.697    0.265  0.104   0.280 0.032 0.165 0.068
+## 8        2015    251    9.148 22.754    0.253  0.105   0.293 0.030 0.169 0.068
+## 9        2016    253    9.225 24.067    0.240  0.102   0.303 0.028 0.169 0.073
+## 10       2017    245    8.687 24.834    0.219  0.088   0.328 0.023 0.174 0.080
+## 11        All   2439    7.685 22.352    0.267  0.110   0.278 0.030 0.171 0.066
+##    Sweden   USA  hpwt space   mpg   mpd
+## 1   0.024 0.011 0.416 1.245 4.578 0.760
+## 2   0.022 0.012 0.411 1.229 4.838 0.905
+## 3   0.022 0.009 0.414 1.247 5.022 0.837
+## 4   0.020 0.008 0.421 1.261 5.183 0.782
+## 5   0.017 0.009 0.422 1.264 5.422 0.825
+## 6   0.015 0.007 0.423 1.268 5.573 0.878
+## 7   0.017 0.004 0.431 1.277 5.702 0.962
+## 8   0.017 0.004 0.443 1.290 5.787 1.126
+## 9   0.018 0.006 0.457 1.305 5.692 1.149
+## 10  0.020 0.003 0.465 1.318 5.502 1.053
+## 11  0.019 0.007 0.433 1.274 5.391 0.948</code></pre>
 <pre class="r"><code># Table 6: Descriptive Statistics of Structured Data
-subset_stats &lt;- summary_stats[, c(1:4, 11:14)] %&gt;% as.data.frame()
-names(subset_stats) &lt;- c(&quot;Market&quot;,&quot;No. of Observations&quot;,&quot;Quantity&quot;,&quot;Price&quot;,&quot;HP/Wt&quot;,&quot;Space&quot;,&quot;MPG&quot;,&quot;MP\\textsterling&quot;)
+subset_stats &lt;- summary_stats[, c(1:4, 13:16)] %&gt;% as.data.frame()
+names(subset_stats) &lt;- c(&quot;Market&quot;,&quot;No. of Models&quot;,&quot;Quantity&quot;,&quot;Price&quot;,&quot;HP/Wt&quot;,&quot;Space&quot;,&quot;MPG&quot;,&quot;MP\\textsterling&quot;)
 print(subset_stats)</code></pre>
-<pre><code>##    Market No. of Observations Quantity  Price HP/Wt Space   MPG
-## 1    2008                 233    6.158 21.398 0.416 1.245 4.578
-## 2    2009                 247    6.169 21.089 0.411 1.229 4.838
-## 3    2010                 243    6.655 21.584 0.414 1.247 5.022
-## 4    2011                 231    6.876 21.784 0.421 1.261 5.183
-## 5    2012                 244    7.028 21.533 0.422 1.264 5.422
-## 6    2013                 241    8.075 21.351 0.423 1.268 5.573
-## 7    2014                 251    8.608 21.697 0.431 1.277 5.702
-## 8    2015                 251    9.148 22.754 0.443 1.290 5.787
-## 9    2016                 253    9.225 24.067 0.457 1.305 5.692
-## 10   2017                 245    8.687 24.834 0.465 1.318 5.502
-## 11    All                2439    7.685 22.352 0.433 1.274 5.391
-##    MP\\textsterling
-## 1             0.760
-## 2             0.905
-## 3             0.837
-## 4             0.782
-## 5             0.825
-## 6             0.878
-## 7             0.962
-## 8             1.126
-## 9             1.149
-## 10            1.053
-## 11            0.948</code></pre>
+<pre><code>##    Market No. of Models Quantity  Price HP/Wt Space   MPG MP\\textsterling
+## 1    2008           233    6.158 21.398 0.416 1.245 4.578            0.760
+## 2    2009           247    6.169 21.089 0.411 1.229 4.838            0.905
+## 3    2010           243    6.655 21.584 0.414 1.247 5.022            0.837
+## 4    2011           231    6.876 21.784 0.421 1.261 5.183            0.782
+## 5    2012           244    7.028 21.533 0.422 1.264 5.422            0.825
+## 6    2013           241    8.075 21.351 0.423 1.268 5.573            0.878
+## 7    2014           251    8.608 21.697 0.431 1.277 5.702            0.962
+## 8    2015           251    9.148 22.754 0.443 1.290 5.787            1.126
+## 9    2016           253    9.225 24.067 0.457 1.305 5.692            1.149
+## 10   2017           245    8.687 24.834 0.465 1.318 5.502            1.053
+## 11    All          2439    7.685 22.352 0.433 1.274 5.391            0.948</code></pre>
 <pre class="r"><code>xtable(subset_stats)</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":["Market"],"name":[1],"type":["chr"],"align":["left"]},{"label":["No. of Observations"],"name":[2],"type":["int"],"align":["right"]},{"label":["Quantity"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["Price"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["HP/Wt"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["Space"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["MPG"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["MP\\textsterling"],"name":[8],"type":["dbl"],"align":["right"]}],"data":[{"1":"2008","2":"233","3":"6.158","4":"21.398","5":"0.416","6":"1.245","7":"4.578","8":"0.760"},{"1":"2009","2":"247","3":"6.169","4":"21.089","5":"0.411","6":"1.229","7":"4.838","8":"0.905"},{"1":"2010","2":"243","3":"6.655","4":"21.584","5":"0.414","6":"1.247","7":"5.022","8":"0.837"},{"1":"2011","2":"231","3":"6.876","4":"21.784","5":"0.421","6":"1.261","7":"5.183","8":"0.782"},{"1":"2012","2":"244","3":"7.028","4":"21.533","5":"0.422","6":"1.264","7":"5.422","8":"0.825"},{"1":"2013","2":"241","3":"8.075","4":"21.351","5":"0.423","6":"1.268","7":"5.573","8":"0.878"},{"1":"2014","2":"251","3":"8.608","4":"21.697","5":"0.431","6":"1.277","7":"5.702","8":"0.962"},{"1":"2015","2":"251","3":"9.148","4":"22.754","5":"0.443","6":"1.290","7":"5.787","8":"1.126"},{"1":"2016","2":"253","3":"9.225","4":"24.067","5":"0.457","6":"1.305","7":"5.692","8":"1.149"},{"1":"2017","2":"245","3":"8.687","4":"24.834","5":"0.465","6":"1.318","7":"5.502","8":"1.053"},{"1":"All","2":"2439","3":"7.685","4":"22.352","5":"0.433","6":"1.274","7":"5.391","8":"0.948"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["Market"],"name":[1],"type":["chr"],"align":["left"]},{"label":["No. of Models"],"name":[2],"type":["int"],"align":["right"]},{"label":["Quantity"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["Price"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["HP/Wt"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["Space"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["MPG"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["MP\\textsterling"],"name":[8],"type":["dbl"],"align":["right"]}],"data":[{"1":"2008","2":"233","3":"6.158","4":"21.398","5":"0.416","6":"1.245","7":"4.578","8":"0.760"},{"1":"2009","2":"247","3":"6.169","4":"21.089","5":"0.411","6":"1.229","7":"4.838","8":"0.905"},{"1":"2010","2":"243","3":"6.655","4":"21.584","5":"0.414","6":"1.247","7":"5.022","8":"0.837"},{"1":"2011","2":"231","3":"6.876","4":"21.784","5":"0.421","6":"1.261","7":"5.183","8":"0.782"},{"1":"2012","2":"244","3":"7.028","4":"21.533","5":"0.422","6":"1.264","7":"5.422","8":"0.825"},{"1":"2013","2":"241","3":"8.075","4":"21.351","5":"0.423","6":"1.268","7":"5.573","8":"0.878"},{"1":"2014","2":"251","3":"8.608","4":"21.697","5":"0.431","6":"1.277","7":"5.702","8":"0.962"},{"1":"2015","2":"251","3":"9.148","4":"22.754","5":"0.443","6":"1.290","7":"5.787","8":"1.126"},{"1":"2016","2":"253","3":"9.225","4":"24.067","5":"0.457","6":"1.305","7":"5.692","8":"1.149"},{"1":"2017","2":"245","3":"8.687","4":"24.834","5":"0.465","6":"1.318","7":"5.502","8":"1.053"},{"1":"All","2":"2439","3":"7.685","4":"22.352","5":"0.433","6":"1.274","7":"5.391","8":"0.948"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 </div>
@@ -2090,7 +2126,7 @@ latex_table &lt;- xtable(cor_matrix, caption = &quot;Correlation Matrix&quot;)
 # Table 8: Correlation Matrix
 print(latex_table)</code></pre>
 <pre><code>## % latex table generated in R 4.3.1 by xtable 1.8-4 package
-## % Tue Jan 14 09:42:38 2025
+## % Wed Jan 15 10:54:37 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{rrrrrrrrr}
@@ -2125,7 +2161,7 @@ for(market in 2008:2017){
   print(latex_table, include.rownames = FALSE, include.colnames = TRUE, hline.after = c(-1, 0, nrow(subset_df)))
 }</code></pre>
 <pre><code>## % latex table generated in R 4.3.1 by xtable 1.8-4 package
-## % Tue Jan 14 09:42:38 2025
+## % Wed Jan 15 10:54:37 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{lllrrrrrrrr}
@@ -2163,7 +2199,7 @@ for(market in 2008:2017){
 ## \label{tab:mytable}
 ## \end{table}
 ## % latex table generated in R 4.3.1 by xtable 1.8-4 package
-## % Tue Jan 14 09:42:38 2025
+## % Wed Jan 15 10:54:37 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{lllrrrrrrrr}
@@ -2201,7 +2237,7 @@ for(market in 2008:2017){
 ## \label{tab:mytable}
 ## \end{table}
 ## % latex table generated in R 4.3.1 by xtable 1.8-4 package
-## % Tue Jan 14 09:42:38 2025
+## % Wed Jan 15 10:54:37 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{lllrrrrrrrr}
@@ -2239,7 +2275,7 @@ for(market in 2008:2017){
 ## \label{tab:mytable}
 ## \end{table}
 ## % latex table generated in R 4.3.1 by xtable 1.8-4 package
-## % Tue Jan 14 09:42:38 2025
+## % Wed Jan 15 10:54:37 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{lllrrrrrrrr}
@@ -2278,7 +2314,7 @@ for(market in 2008:2017){
 ## \label{tab:mytable}
 ## \end{table}
 ## % latex table generated in R 4.3.1 by xtable 1.8-4 package
-## % Tue Jan 14 09:42:38 2025
+## % Wed Jan 15 10:54:37 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{lllrrrrrrrr}
@@ -2319,7 +2355,7 @@ for(market in 2008:2017){
 ## \label{tab:mytable}
 ## \end{table}
 ## % latex table generated in R 4.3.1 by xtable 1.8-4 package
-## % Tue Jan 14 09:42:38 2025
+## % Wed Jan 15 10:54:37 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{lllrrrrrrrr}
@@ -2360,7 +2396,7 @@ for(market in 2008:2017){
 ## \label{tab:mytable}
 ## \end{table}
 ## % latex table generated in R 4.3.1 by xtable 1.8-4 package
-## % Tue Jan 14 09:42:38 2025
+## % Wed Jan 15 10:54:37 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{lllrrrrrrrr}
@@ -2402,7 +2438,7 @@ for(market in 2008:2017){
 ## \label{tab:mytable}
 ## \end{table}
 ## % latex table generated in R 4.3.1 by xtable 1.8-4 package
-## % Tue Jan 14 09:42:38 2025
+## % Wed Jan 15 10:54:37 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{lllrrrrrrrr}
@@ -2444,7 +2480,7 @@ for(market in 2008:2017){
 ## \label{tab:mytable}
 ## \end{table}
 ## % latex table generated in R 4.3.1 by xtable 1.8-4 package
-## % Tue Jan 14 09:42:38 2025
+## % Wed Jan 15 10:54:37 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{lllrrrrrrrr}
@@ -2488,7 +2524,7 @@ for(market in 2008:2017){
 ## \label{tab:mytable}
 ## \end{table}
 ## % latex table generated in R 4.3.1 by xtable 1.8-4 package
-## % Tue Jan 14 09:42:38 2025
+## % Wed Jan 15 10:54:37 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{lllrrrrrrrr}
@@ -3385,7 +3421,7 @@ for(i in 2008:2017){
 ## Table 10: Correlation Between Distances in Structured Space \&amp; Distances in Visual Space
 print(xtable(df_segment_correlation[df_segment_correlation$year==2013,],digits = 3))</code></pre>
 <pre><code>## % latex table generated in R 4.3.1 by xtable 1.8-4 package
-## % Tue Jan 14 09:47:00 2025
+## % Wed Jan 15 10:58:34 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{rlrr}
@@ -3465,7 +3501,7 @@ bootstrap_results$std_error &lt;- round(bootstrap_results$std_error, 3)
 # Print results using xtable
 print(xtable(bootstrap_results, digits = 3))</code></pre>
 <pre><code>## % latex table generated in R 4.3.1 by xtable 1.8-4 package
-## % Tue Jan 14 09:47:01 2025
+## % Wed Jan 15 10:58:34 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{rlrr}
@@ -3574,7 +3610,7 @@ segment_combined_areas &lt;- merge(areas_structured %&gt;% select (segment_name,
  ## Table 12: Area Share of a Make in Structured Space \&amp; Visual Space
  print(xtable(segment_combined_areas[segment_combined_areas$market_ids==2013 &amp; segment_combined_areas$segment_name==&quot;J&quot;,],digits = 4))</code></pre>
 <pre><code>## % latex table generated in R 4.3.1 by xtable 1.8-4 package
-## % Tue Jan 14 09:47:01 2025
+## % Wed Jan 15 10:58:35 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{rllrrrr}
@@ -3685,7 +3721,7 @@ df_segments &lt;- df %&gt;% select(segment_name, make, market_ids, closest_struc
 ## Table 11a: Closest Within-Segment Rivals in Structured Space \&amp; Visual Space
 print(xtable(df_segments[df_segments$market_ids==2013 &amp; df_segments$segment_name==&quot;B&quot;,],digits = 4))</code></pre>
 <pre><code>## % latex table generated in R 4.3.1 by xtable 1.8-4 package
-## % Tue Jan 14 09:47:01 2025
+## % Wed Jan 15 10:58:35 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{rllrllllll}
@@ -3703,7 +3739,7 @@ print(xtable(df_segments[df_segments$market_ids==2013 &amp; df_segments$segment_
 <pre class="r"><code>## Table 11b: Closest Within-Segment Rivals in Structured Space \&amp; Visual Space
 print(xtable(df_segments[df_segments$market_ids==2013 &amp; df_segments$segment_name==&quot;D&quot;,],digits = 4))</code></pre>
 <pre><code>## % latex table generated in R 4.3.1 by xtable 1.8-4 package
-## % Tue Jan 14 09:47:01 2025
+## % Wed Jan 15 10:58:35 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{rllrllllll}
@@ -3720,7 +3756,7 @@ print(xtable(df_segments[df_segments$market_ids==2013 &amp; df_segments$segment_
 <pre class="r"><code>## Table 11c: Closest Within-Segment Rivals in Structured Space \&amp; Visual Space
 print(xtable(df_segments[df_segments$market_ids==2013 &amp; df_segments$segment_name==&quot;J&quot;,],digits = 4))</code></pre>
 <pre><code>## % latex table generated in R 4.3.1 by xtable 1.8-4 package
-## % Tue Jan 14 09:47:01 2025
+## % Wed Jan 15 10:58:35 2025
 ## \begin{table}[ht]
 ## \centering
 ## \begin{tabular}{rllrllllll}
