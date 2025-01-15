@@ -75,36 +75,49 @@ uk_product_data$demand_instruments7 <- NULL
 uk_product_data$Domestic <- ifelse(uk_product_data$region=="United Kingdom",1,0)
 uk_product_data$France <- ifelse(uk_product_data$region=="France",1,0)
 uk_product_data$Germany <- ifelse(uk_product_data$region=="Germany",1,0)
+uk_product_data$Italy <- ifelse(uk_product_data$region=="Italy",1,0)
 uk_product_data$Japan <- ifelse(uk_product_data$region=="Japan",1,0)
 uk_product_data$Korea <- ifelse(uk_product_data$region=="South Korea",1,0)
+uk_product_data$Sweden <- ifelse(uk_product_data$region=="Sweden",1,0)
 uk_product_data$USA <- ifelse(uk_product_data$region=="United States",1,0)
+uk_product_data$Others <- ifelse(uk_product_data$region=="Malaysia" | uk_product_data$region=="Romania" | uk_product_data$region=="Spain" | uk_product_data$region=="Czech",1,0)
 
-summary_stats <- uk_product_data %>% group_by(market_ids) %>% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*shares)/sum(shares),hp=sum(hp*shares),weight=sum(wt*shares),hpwt=sum(hpwt*shares)/sum(shares),mpg=sum(mpg*shares)/sum(shares),length=sum(len*shares),width=sum(wid*shares),height=sum(ht*shares),wheelbase=sum(wb*shares),space=sum(space*shares)/sum(shares))
+temp <- uk_product_data
 
-temp <- uk_product_data %>% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*shares)/sum(shares),hp=sum(hp*shares),weight=sum(wt*shares),hpwt=sum(hpwt*shares)/sum(shares),mpg=sum(mpg*shares)/sum(shares),length=sum(len*shares),width=sum(wid*shares),height=sum(ht*shares),wheelbase=sum(wb*shares),space=sum(space*shares)/sum(shares))
+temp$Segment_A <- ifelse(temp$Segment==1,1,0)
+temp$Segment_B <- ifelse(temp$Segment==2,1,0)
+temp$Segment_C <- ifelse(temp$Segment==3,1,0)
+temp$Segment_D <- ifelse(temp$Segment==4,1,0)
+temp$Segment_E <- ifelse(temp$Segment==5,1,0)
+temp$Segment_J <- ifelse(temp$Segment==7,1,0)
+temp$Segment_M <- ifelse(temp$Segment==8,1,0)
 
-temp <- cbind("All",temp)
-names(temp)[1] <- "market_ids"
+temp$len <- temp$len * 0.393701/1000
+temp$wid <- temp$wid * 0.393701/1000
+temp$wb <- temp$wb * 0.393701/1000
+temp$ht <- temp$ht * 0.393701/1000
 
-summary_stats <- rbind(summary_stats,temp)
 
-rm(temp)
+temp$clustering_ids <- NULL
+temp$car_ids <- NULL
+temp$firm_ids <- NULL
+temp$make <- NULL
+temp$model <- NULL
+temp$shares <- NULL
+temp$trend <- NULL
+temp$ULSP <- NULL
+temp$ULSD <- NULL
+temp$CPI <- NULL
+temp$Segment <- NULL
+temp$Segment_Desc <- NULL
+temp$low_share <- NULL
+temp$count <- NULL
+temp$region <- NULL
+temp$market_ids <- NULL
 
-uk_product_data$Domestic <- NULL
-uk_product_data$France <- NULL
-uk_product_data$Germany <- NULL
-uk_product_data$Japan <- NULL
-uk_product_data$Korea <- NULL
-uk_product_data$USA <- NULL
+stargazer(temp, summary = TRUE, summary.stat = c("mean", "sd", "min", "max"))
+stargazer(temp, summary = TRUE, summary.stat = c("mean", "sd", "min", "max"), type = "text")
 
-summary_stats$Quantity <- summary_stats$Quantity/1000
-summary_stats[,3:13] <- round(summary_stats[,3:13],3)
-print(summary_stats %>% as.data.frame())
-# Table 6: Descriptive Statistics of Structured Data
-subset_stats <- summary_stats[, c(1:4, 5:13)] %>% as.data.frame()
-names(subset_stats) <- c("Market","No. of Observations","Quantity","Price","HP","Weight","HP/Wt","MPG","Length","Width","Height","Wheelbase","Space")
-print(subset_stats)
-xtable(subset_stats)
 
 ```
 
@@ -143,13 +156,20 @@ uk_product_data$demand_instruments7 <- NULL
 uk_product_data$Domestic <- ifelse(uk_product_data$region=="United Kingdom",1,0)
 uk_product_data$France <- ifelse(uk_product_data$region=="France",1,0)
 uk_product_data$Germany <- ifelse(uk_product_data$region=="Germany",1,0)
+uk_product_data$Italy <- ifelse(uk_product_data$region=="Italy",1,0)
 uk_product_data$Japan <- ifelse(uk_product_data$region=="Japan",1,0)
 uk_product_data$Korea <- ifelse(uk_product_data$region=="South Korea",1,0)
+uk_product_data$Sweden <- ifelse(uk_product_data$region=="Sweden",1,0)
 uk_product_data$USA <- ifelse(uk_product_data$region=="United States",1,0)
+uk_product_data$Others <- ifelse(uk_product_data$region=="Malaysia" | uk_product_data$region=="Romania" | uk_product_data$region=="Spain" | uk_product_data$region=="Czech",1,0)
 
-summary_stats <- uk_product_data %>% group_by(market_ids) %>% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*shares)/sum(shares),Domestic=sum(Domestic*shares)/sum(shares),France=sum(France*shares)/sum(shares),Germany=sum(Germany*shares)/sum(shares),Japan=sum(Japan*shares)/sum(shares),Korea=sum(Korea*shares)/sum(shares),USA=sum(USA*shares)/sum(shares),hpwt=sum(hpwt*shares)/sum(shares),space=sum(space*shares)/sum(shares),mpg=sum(mpg*shares)/sum(shares),mpd=sum(mpd*shares)/sum(shares))
+# summary_stats <- uk_product_data %>% group_by(market_ids) %>% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*shares)/sum(shares),hpwt=sum(hpwt*shares)/sum(shares),mpg=sum(mpg*shares)/sum(shares),space=sum(space*shares)/sum(shares))
+# 
+# temp <- uk_product_data %>% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*quantity)/sum(quantity),hpwt=sum(hpwt*quantity)/sum(quantity),mpg=sum(mpg*quantity)/sum(quantity),space=sum(space*quantity)/sum(quantity))
 
-temp <- uk_product_data %>% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*quantity)/sum(quantity),Domestic=sum(Domestic*quantity)/sum(quantity),France=sum(France*quantity)/sum(quantity),Germany=sum(Germany*quantity)/sum(quantity),Japan=sum(Japan*quantity)/sum(quantity),Korea=sum(Korea*quantity)/sum(quantity),USA=sum(USA*quantity)/sum(quantity),hpwt=sum(hpwt*quantity)/sum(quantity),space=sum(space*quantity)/sum(quantity),mpg=sum(mpg*quantity)/sum(quantity),mpd=sum(mpd*quantity)/sum(quantity))
+summary_stats <- uk_product_data %>% group_by(market_ids) %>% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*shares)/sum(shares),Domestic=sum(Domestic*shares)/sum(shares),France=sum(France*shares)/sum(shares),Germany=sum(Germany*shares)/sum(shares),Italy=sum(Italy*shares)/sum(shares),Japan=sum(Japan*shares)/sum(shares),Korea=sum(Korea*shares)/sum(shares),Sweden=sum(Sweden*shares)/sum(shares),USA=sum(USA*shares)/sum(shares),hpwt=sum(hpwt*shares)/sum(shares),space=sum(space*shares)/sum(shares),mpg=sum(mpg*shares)/sum(shares),mpd=sum(mpd*shares)/sum(shares))
+
+temp <- uk_product_data %>% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*quantity)/sum(quantity),Domestic=sum(Domestic*quantity)/sum(quantity),France=sum(France*quantity)/sum(quantity),Germany=sum(Germany*quantity)/sum(quantity),Italy=sum(Italy*quantity)/sum(quantity),Japan=sum(Japan*quantity)/sum(quantity),Korea=sum(Korea*quantity)/sum(quantity),Sweden=sum(Sweden*quantity)/sum(quantity),USA=sum(USA*quantity)/sum(quantity),hpwt=sum(hpwt*quantity)/sum(quantity),space=sum(space*quantity)/sum(quantity),mpg=sum(mpg*quantity)/sum(quantity),mpd=sum(mpd*quantity)/sum(quantity))
 
 temp <- cbind("All",temp)
 names(temp)[1] <- "market_ids"
@@ -161,16 +181,19 @@ rm(temp)
 uk_product_data$Domestic <- NULL
 uk_product_data$France <- NULL
 uk_product_data$Germany <- NULL
+uk_product_data$Italy <- NULL
 uk_product_data$Japan <- NULL
 uk_product_data$Korea <- NULL
+uk_product_data$Sweden <- NULL
 uk_product_data$USA <- NULL
+uk_product_data$Others <- NULL
 
 summary_stats$Quantity <- summary_stats$Quantity/1000
-summary_stats[,3:14] <- round(summary_stats[,3:14],3)
+summary_stats[,3:16] <- round(summary_stats[,3:16],3)
 print(summary_stats %>% as.data.frame())
 # Table 6: Descriptive Statistics of Structured Data
-subset_stats <- summary_stats[, c(1:4, 11:14)] %>% as.data.frame()
-names(subset_stats) <- c("Market","No. of Observations","Quantity","Price","HP/Wt","Space","MPG","MP\\textsterling")
+subset_stats <- summary_stats[, c(1:4, 13:16)] %>% as.data.frame()
+names(subset_stats) <- c("Market","No. of Models","Quantity","Price","HP/Wt","Space","MPG","MP\\textsterling")
 print(subset_stats)
 xtable(subset_stats)
 
