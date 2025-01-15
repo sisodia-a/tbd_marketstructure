@@ -184,6 +184,10 @@ Execute  `Rscript visualization_file_mds.Rmd` to produce
 7. **Figure 5: (Color Online) Segment B, D \& J: Market Structure Map**
 8. Results on **Does differentiation across segments increase when visual information is included?**
 
+Execute `Rscript google_trend_prep.Rmd`, and then `Rscript google_trend_makemodel.Rmd` for the google trend analysis.
+
+Execute `Rscript hj_validation_makemodel.Rmd` for validation.
+
 ## Computing Resources
 
 We used 64G GPU to run each model instance of 200 epoch, 64 batch size, 5e-4 learning rate. Each model run takes 4 minutes. We train 10 random seeds * 3 supervisory signal combinations * 25*15 grid values = 11,250 models. This would mean 750 hours of model training.
