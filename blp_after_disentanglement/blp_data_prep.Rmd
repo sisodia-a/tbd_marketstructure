@@ -11,29 +11,31 @@ editor_options:
 
 ```{r, warning=FALSE}
 
-library(dplyr)
-library(xgboost)
 library(caret)
-require(tidyr)
-library(ggplot2)
-library(ggforce)
-library(reshape)
-library(stargazer)
 library(cowplot)
-library(magick)
-# library(MASS)
+library(data.table)
+library(dplyr)
+library(geometry)
 library(ggalt) # for geom_encircle
-library(purrr)
-library(xtable)
+library(ggforce)
+library(ggplot2)
 library(ggrepel)
 library(grid)
+library(hdm)
 library(jpeg)
-library(data.table)
-library(geometry)
+library(magick)
+# library(MASS)
 library(purrr)
-library(sp)
-library(sf)
 library(RColorBrewer)
+library(reshape)
+library(stargazer)
+library(sf)
+library(sp)
+library(tictoc)
+require(tidyr)
+library(xgboost)
+library(xtable)
+
 # library(Cairo)
 rm(list=ls())
 set.seed(123)
@@ -75,13 +77,16 @@ uk_product_data$demand_instruments7 <- NULL
 uk_product_data$Domestic <- ifelse(uk_product_data$region=="United Kingdom",1,0)
 uk_product_data$France <- ifelse(uk_product_data$region=="France",1,0)
 uk_product_data$Germany <- ifelse(uk_product_data$region=="Germany",1,0)
+uk_product_data$Italy <- ifelse(uk_product_data$region=="Italy",1,0)
 uk_product_data$Japan <- ifelse(uk_product_data$region=="Japan",1,0)
 uk_product_data$Korea <- ifelse(uk_product_data$region=="South Korea",1,0)
+uk_product_data$Sweden <- ifelse(uk_product_data$region=="Sweden",1,0)
 uk_product_data$USA <- ifelse(uk_product_data$region=="United States",1,0)
+uk_product_data$Others <- ifelse(uk_product_data$region=="Malaysia" | uk_product_data$region=="Romania" | uk_product_data$region=="Spain" | uk_product_data$region=="Czech",1,0)
 
-summary_stats <- uk_product_data %>% group_by(market_ids) %>% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*shares)/sum(shares),Domestic=sum(Domestic*shares)/sum(shares),France=sum(France*shares)/sum(shares),Germany=sum(Germany*shares)/sum(shares),Japan=sum(Japan*shares)/sum(shares),Korea=sum(Korea*shares)/sum(shares),USA=sum(USA*shares)/sum(shares),hpwt=sum(hpwt*shares)/sum(shares),space=sum(space*shares)/sum(shares),mpg=sum(mpg*shares)/sum(shares),mpd=sum(mpd*shares)/sum(shares))
+summary_stats <- uk_product_data %>% group_by(market_ids) %>% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*shares)/sum(shares),Domestic=sum(Domestic*shares)/sum(shares),France=sum(France*shares)/sum(shares),Germany=sum(Germany*shares)/sum(shares),Italy=sum(Italy*shares)/sum(shares),Japan=sum(Japan*shares)/sum(shares),Korea=sum(Korea*shares)/sum(shares),Sweden=sum(Sweden*shares)/sum(shares),USA=sum(USA*shares)/sum(shares),hpwt=sum(hpwt*shares)/sum(shares),space=sum(space*shares)/sum(shares),mpg=sum(mpg*shares)/sum(shares),mpd=sum(mpd*shares)/sum(shares))
 
-temp <- uk_product_data %>% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*quantity)/sum(quantity),Domestic=sum(Domestic*quantity)/sum(quantity),France=sum(France*quantity)/sum(quantity),Germany=sum(Germany*quantity)/sum(quantity),Japan=sum(Japan*quantity)/sum(quantity),Korea=sum(Korea*quantity)/sum(quantity),USA=sum(USA*quantity)/sum(quantity),hpwt=sum(hpwt*quantity)/sum(quantity),space=sum(space*quantity)/sum(quantity),mpg=sum(mpg*quantity)/sum(quantity),mpd=sum(mpd*quantity)/sum(quantity))
+temp <- uk_product_data %>% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*quantity)/sum(quantity),Domestic=sum(Domestic*quantity)/sum(quantity),France=sum(France*quantity)/sum(quantity),Germany=sum(Germany*quantity)/sum(quantity),Italy=sum(Italy*quantity)/sum(quantity),Japan=sum(Japan*quantity)/sum(quantity),Korea=sum(Korea*quantity)/sum(quantity),Sweden=sum(Sweden*quantity)/sum(quantity),USA=sum(USA*quantity)/sum(quantity),hpwt=sum(hpwt*quantity)/sum(quantity),space=sum(space*quantity)/sum(quantity),mpg=sum(mpg*quantity)/sum(quantity),mpd=sum(mpd*quantity)/sum(quantity))
 
 temp <- cbind("All",temp)
 names(temp)[1] <- "market_ids"
@@ -93,16 +98,19 @@ rm(temp)
 uk_product_data$Domestic <- NULL
 uk_product_data$France <- NULL
 uk_product_data$Germany <- NULL
+uk_product_data$Italy <- NULL
 uk_product_data$Japan <- NULL
 uk_product_data$Korea <- NULL
+uk_product_data$Sweden <- NULL
 uk_product_data$USA <- NULL
+uk_product_data$Others <- NULL
 
 summary_stats$Quantity <- summary_stats$Quantity/1000
-summary_stats[,3:14] <- round(summary_stats[,3:14],3)
+summary_stats[,3:16] <- round(summary_stats[,3:16],3)
 print(summary_stats %>% as.data.frame())
 # Table 6: Descriptive Statistics of Structured Data
-subset_stats <- summary_stats[, c(1:4, 11:14)] %>% as.data.frame()
-names(subset_stats) <- c("Market","No. of Observations","Quantity","Price","HP/Wt","Space","MPG","MP\\textsterling")
+subset_stats <- summary_stats[, c(1:4, 13:16)] %>% as.data.frame()
+names(subset_stats) <- c("Market","No. of Models","Quantity","Price","HP/Wt","Space","MPG","MP\\textsterling")
 print(subset_stats)
 xtable(subset_stats)
 
@@ -158,5 +166,176 @@ df_data_3 <- rbind(df_data_1,df_data_2)
 
 write.csv(df_data_1,'uk_blp_products_1.csv',row.names = FALSE)
 write.csv(df_data_3,'uk_blp_products_3.csv',row.names = FALSE)
+
+```
+
+## Summary Stats
+
+```{r}
+
+uk_blp_agents <- data.table(read.csv("uk_blp_agents_h7.csv"))
+uk_blp_products <- data.table(df_data_1)
+uk_blp_products <- uk_blp_products %>% filter(!is.na(mpg) & clustering_ids!="75_22" & mpd < 3)
+
+uk_product_data$Domestic <- ifelse(uk_product_data$region=="United Kingdom",1,0)
+uk_product_data$France <- ifelse(uk_product_data$region=="France",1,0)
+uk_product_data$Germany <- ifelse(uk_product_data$region=="Germany",1,0)
+uk_product_data$Italy <- ifelse(uk_product_data$region=="Italy",1,0)
+uk_product_data$Japan <- ifelse(uk_product_data$region=="Japan",1,0)
+uk_product_data$Korea <- ifelse(uk_product_data$region=="South Korea",1,0)
+uk_product_data$Sweden <- ifelse(uk_product_data$region=="Sweden",1,0)
+uk_product_data$USA <- ifelse(uk_product_data$region=="United States",1,0)
+uk_product_data$Others <- ifelse(uk_product_data$region=="Malaysia" | uk_product_data$region=="Romania" | uk_product_data$region=="Spain" | uk_product_data$region=="Czech",1,0)
+
+summary_stats <- uk_product_data %>% group_by(market_ids) %>% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*shares)/sum(shares),Domestic=sum(Domestic*shares)/sum(shares),France=sum(France*shares)/sum(shares),Germany=sum(Germany*shares)/sum(shares),Italy=sum(Italy*shares)/sum(shares),Japan=sum(Japan*shares)/sum(shares),Korea=sum(Korea*shares)/sum(shares),Sweden=sum(Sweden*shares)/sum(shares),USA=sum(USA*shares)/sum(shares),hpwt=sum(hpwt*shares)/sum(shares),space=sum(space*shares)/sum(shares),mpg=sum(mpg*shares)/sum(shares),mpd=sum(mpd*shares)/sum(shares))
+
+temp <- uk_product_data %>% summarise(models=n(),Quantity=mean(quantity),price=sum(prices*quantity)/sum(quantity),Domestic=sum(Domestic*quantity)/sum(quantity),France=sum(France*quantity)/sum(quantity),Germany=sum(Germany*quantity)/sum(quantity),Italy=sum(Italy*quantity)/sum(quantity),Japan=sum(Japan*quantity)/sum(quantity),Korea=sum(Korea*quantity)/sum(quantity),Sweden=sum(Sweden*quantity)/sum(quantity),USA=sum(USA*quantity)/sum(quantity),hpwt=sum(hpwt*quantity)/sum(quantity),space=sum(space*quantity)/sum(quantity),mpg=sum(mpg*quantity)/sum(quantity),mpd=sum(mpd*quantity)/sum(quantity))
+
+temp <- cbind("All",temp)
+names(temp)[1] <- "market_ids"
+
+summary_stats <- rbind(summary_stats,temp)
+
+rm(temp)
+
+uk_product_data$Domestic <- NULL
+uk_product_data$France <- NULL
+uk_product_data$Germany <- NULL
+uk_product_data$Italy <- NULL
+uk_product_data$Japan <- NULL
+uk_product_data$Korea <- NULL
+uk_product_data$Sweden <- NULL
+uk_product_data$USA <- NULL
+uk_product_data$Others <- NULL
+
+summary_stats$Quantity <- summary_stats$Quantity/1000
+summary_stats[,3:16] <- round(summary_stats[,3:16],3)
+print(summary_stats %>% as.data.frame())
+
+subset_stats <- summary_stats[, c(1:4, 13:16)] %>% as.data.frame()
+names(subset_stats) <- c("Market","No. of Models","Quantity","Price","HP/Wt","Space","MPG","MP\\textsterling")
+print(subset_stats)
+xtable(subset_stats)
+
+rm(summary_stats)
+
+```
+
+## Inner & Outer Share
+
+```{r}
+
+uk_blp_products <- merge(uk_blp_products,uk_blp_products %>% group_by(market_ids) %>% summarise(inside_shares=sum(shares))) %>% as.data.frame()
+uk_blp_products$outside_shares <- 1 - uk_blp_products$inside_shares
+uk_blp_products$log_s_s0 <- log(uk_blp_products$shares)- log(uk_blp_products$outside_shares)
+
+uk_blp_products$constant <- 1
+uk_blp_products$inside_shares <- NULL
+uk_blp_products$outside_shares <- NULL
+
+```
+
+## Adding supply w's
+
+```{r}
+
+uk_blp_products$log_price <- log(uk_blp_products$prices)
+uk_blp_products$log_hpwt <- log(uk_blp_products$hpwt)
+uk_blp_products$log_mpg <- log(uk_blp_products$mpg)
+uk_blp_products$log_space <- log(uk_blp_products$space)
+
+```
+
+## Adding Own and Rival Instruments
+
+```{r}
+
+own_instruments <- data.table(uk_blp_products %>% group_by(firm_ids,market_ids) %>% summarise(own_constant=sum(constant),own_hpwt=sum(hpwt),own_mpd=sum(mpd),own_space=sum(space),own_log_hpwt=sum(log_hpwt),own_log_mpg=sum(log_mpg),own_log_space=sum(log_space),own_trend=sum(trend)))
+
+rival_instruments <- data.table(uk_blp_products %>% group_by(market_ids) %>% summarise(rival_constant=sum(constant),rival_hpwt=sum(hpwt),rival_mpd=sum(mpd),rival_space=sum(space),rival_log_hpwt=sum(log_hpwt),rival_log_mpg=sum(log_mpg),rival_log_space=sum(log_space),rival_trend=sum(trend)))
+
+uk_blp_products <- merge(uk_blp_products,own_instruments,by=c("firm_ids","market_ids")) %>% as.data.frame()
+uk_blp_products <- merge(uk_blp_products,rival_instruments,by=c("market_ids")) %>% as.data.frame()
+
+uk_blp_products$rival_constant <- uk_blp_products$rival_constant - uk_blp_products$own_constant
+uk_blp_products$rival_hpwt <- uk_blp_products$rival_hpwt - uk_blp_products$own_hpwt
+uk_blp_products$rival_mpd <- uk_blp_products$rival_mpd - uk_blp_products$own_mpd
+uk_blp_products$rival_space <- uk_blp_products$rival_space - uk_blp_products$own_space
+uk_blp_products$rival_log_hpwt <- uk_blp_products$rival_log_hpwt - uk_blp_products$own_log_hpwt
+uk_blp_products$rival_log_mpg <- uk_blp_products$rival_log_mpg - uk_blp_products$own_log_mpg
+uk_blp_products$rival_log_space <- uk_blp_products$rival_log_space - uk_blp_products$own_log_space
+uk_blp_products$rival_trend <- uk_blp_products$rival_trend - uk_blp_products$own_trend
+
+uk_blp_products$own_constant <- uk_blp_products$own_constant - uk_blp_products$constant
+uk_blp_products$own_hpwt <- uk_blp_products$own_hpwt - uk_blp_products$hpwt
+uk_blp_products$own_mpd <- uk_blp_products$own_mpd - uk_blp_products$mpd
+uk_blp_products$own_space <- uk_blp_products$own_space - uk_blp_products$space
+uk_blp_products$own_log_hpwt <- uk_blp_products$own_log_hpwt - uk_blp_products$log_hpwt
+uk_blp_products$own_log_mpg <- uk_blp_products$own_log_mpg - uk_blp_products$log_mpg
+uk_blp_products$own_log_space <- uk_blp_products$own_log_space - uk_blp_products$log_space
+uk_blp_products$own_trend <- uk_blp_products$own_trend - uk_blp_products$trend
+
+uk_blp_products$firm_ids <- as.numeric(as.factor(uk_blp_products$firm_ids))
+uk_blp_products <- uk_blp_products[order(uk_blp_products[,1]),]
+
+```
+
+## Logit
+
+```{r}
+
+## Homoegenous Logit with Agg Data (No Instruments)
+
+m1 <- lm(log_s_s0 ~ hpwt + mpd + space + prices, uk_blp_products)
+
+## OLS ln(price) on w (Table III of BLP 1995 - Column 3)
+
+m3 <- lm(log(prices) ~ log(hpwt) + log(mpg) + log(space) + trend, uk_blp_products)
+
+stargazer(m1, m3, title="BLP 1995 Table 3",align=TRUE,intercept.bottom=FALSE,column.sep.width="-25pt",digits=2,font.size = "tiny",no.space=TRUE,single.row=TRUE,type='text',label = "BLP_Table3",df = FALSE)
+
+```
+
+## IV Logit Demand (Table III of BLP 1995 - Column 2)
+
+```{r}
+
+iv_reg <- function(x, z, w, y) {
+  # Perform IV regression using the GMM formula
+  return(solve(t(x) %*% z %*% w %*% t(z) %*% x) %*% (t(x) %*% z %*% w %*% t(z) %*% y))
+}
+
+# Step 1: Data Preparation
+Y <- as.matrix(uk_blp_products %>% select(log_s_s0))  # Dependent variable
+X <- as.matrix(uk_blp_products %>% select(constant, hpwt, mpd, space, prices))  # Regressors
+Z.D <- as.matrix(uk_blp_products %>% select(
+  constant, hpwt, mpd, space, 
+  own_constant, own_hpwt, own_mpd, own_space, 
+  rival_constant, rival_hpwt, rival_mpd, rival_space))  # Instruments
+
+# Step 2: Initial GMM Weight Matrix (Identity Matrix or Inverse of Z'Z)
+GMM_WEIGHT1 <- solve(t(Z.D) %*% Z.D)
+
+# Step 3: First-Stage IV Regression
+iv_logit1 <- iv_reg(X, Z.D, GMM_WEIGHT1, Y)
+
+# Step 4: Compute Residuals
+residuals <- Y - X %*% iv_logit1
+
+# Step 5: Compute Moment Conditions
+g_ind <- sweep(Z.D, 1, residuals, "*")  # Broadcast residuals across rows of Z.D
+
+# Step 6: Demean the Moment Conditions
+demeaned_g <- sweep(g_ind, 2, colMeans(g_ind), "-")  # Subtract column-wise mean
+
+# Step 7: Calculate Variance-Covariance Matrix (Weight Update)
+vg <- t(demeaned_g) %*% demeaned_g / nrow(demeaned_g)  # Variance-covariance matrix
+GMM_WEIGHT2 <- solve(vg)  # Updated weight matrix
+
+# Step 8: Second-Stage IV Regression (Using Updated Weight Matrix)
+iv_logit2 <- iv_reg(X, Z.D, GMM_WEIGHT2, Y)
+
+# Output
+iv_logit2
 
 ```
